@@ -1,0 +1,189 @@
+<div class="container">
+
+
+
+  <div style="margin-top: 10px; display: flex; flex-direction: row" class="contenaireBar" style="
+      padding: 18px 10px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      background: #d7e3ff2e;
+      border-bottom: 0.5px solid #e8e8e826;
+      margin-bottom: 20px;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(131, 130, 130, 0.05);
+    ">
+    <div style="flex-direction: column; width: 100%;justify-content: center;">
+      <!-- <div nz-row nzJustify="start" nzAlign="middle" style="width: 100%; padding-left: 10px;"
+        *ngIf="transactions != null && transactions.length > 0">
+        <span style="
+            font-size: 20px;
+            font-weight: 900;
+            color: #000;
+            transform: perspective(500px) rotateX(10deg);
+            display: inline-block;
+          ">
+          {{ transactions?.length }} transaction{{
+          transactions != undefined && transactions!.length > 1 ? "s" : ""
+          }}
+        </span>
+      </div> -->
+
+      <div class="contenaireBar"
+        style="margin-right: 0px; flex-basis: 100%; align-items: center !important;justify-content: space-between;">
+        <form nz-form [formGroup]="validateForm" nz-space nzAlign="start" #myform="ngForm"
+          style="display: flex; justify-content: start">
+          <nz-form-item nzJustify="start" style="width: 600px">
+            <nz-form-control [nzSpan]="15">
+              <nz-range-picker class="custom-input" [(ngModel)]="dateArray" formControlName="date"
+                (ngModelChange)="onChange($event)" style="width: 100%"></nz-range-picker>
+            </nz-form-control>
+            <button nz-button nzType="primary" [nzSize]="size" style="
+                width: 30px;
+                height: 30px;
+                border-radius: 40%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+                margin-left: 2px;
+              " (click)="getTransactions()" class="refresh-btn">
+              <i nz-icon nzType="sync" nzTheme="outline"></i>
+            </button>
+          </nz-form-item>
+        </form>
+        <nz-select id="typeInterm" nzShowSearch nzAllowClear formControlName="typeInterm" class="custom-input"
+          nzPlaceHolder="Type de rapport" style="width: 170px;">
+          <nz-option style="font-weight: bold;font-size: large;" *ngFor="let item of types; index as i"
+            nzValue="{{ item}}" nzLabel="{{
+                     item
+                    }}">
+            {{ item }}
+          </nz-option>
+        </nz-select>
+        <a class="open-link_view_action2" title="Imprimer la rapport" style="width: 10%;justify-content: center !important;">
+          <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+        </a>
+      </div>
+
+
+    </div>
+  </div>
+
+  <div>
+    <nz-table [nzLoading]="loading" #filterTable [nzData]="transactions!" [nzPageSize]="9" nzShowPagination
+      class="policies-table" nzShowPagination nzShowSizeChanger [nzFrontPagination]="true">
+      <thead>
+        <tr>
+          <th>Date et heure</th>
+          <th>Reférence facture</th>
+          <th>Mode facture</th>
+          <th>Date taux</th>
+          <th>Valeur taux</th>
+          <th>Statut DGI</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let transaction of filterTable.data; let i = index">
+          <td style="text-align: center">
+            {{ transaction.createdAt | date : "dd/MM/yyyy HH:mm:ss" }}
+          </td>
+          <td style="text-align: center">
+            {{ transaction.rn }}
+          </td>
+
+          <td style="text-align: center">
+            {{ transaction.type }}
+          </td>
+
+          <td style="text-align: center">
+            {{ transaction.currencyDate | date : "dd-MM-yyyy HH:mm:ss" }}
+          </td>
+
+          <td style="text-align: center">
+            {{ transaction.currencyRate }}
+          </td>
+
+          <!-- <td style="text-align: center">
+            <div
+              [class]="transaction.status === '0' ? 'status' : 'status_error'"
+              ngSwitch="{{ transaction.status }}"
+            >
+              <nz-tag
+                *ngSwitchCase="'0'"
+                ngS
+                nzColor="success"
+                class="status_item"
+              >
+                <span nz-icon nzType="check-circle"></span>
+              </nz-tag>
+              <nz-tag *ngSwitchDefault nzColor="error" class="status_item">
+                <span nz-icon nzType="close-circle"></span>
+              </nz-tag>
+            </div>
+          </td> -->
+
+
+
+          <td nzRight style="padding-left: 30px; text-align: center;">
+            <div ngSwitch={{transaction.status}}>
+              <nz-tag *ngSwitchCase="'0'" ngS nzColor="success" class="status_item">
+                <span nz-icon nzType="check-circle"></span>
+                <span>OK</span>
+              </nz-tag>
+              <!-- <nz-tag *ngSwitchCase="'retrait'" nzColor="warning" class="status_item">
+                <span nz-icon nzType="close-circle"></span>
+                <span>{{ 'ANNULE' }}</span>
+              </nz-tag> -->
+              <nz-tag *ngSwitchCase="'-1'" nzColor="error" class="status_item">
+                <span nz-icon nzType="close-circle"></span>
+                <span>ERREUR</span>
+              </nz-tag>
+              <nz-tag *ngSwitchCase="'1'" nzColor="purple" class="status_item">
+                <!-- <span nz-icon nzType="exclamation-circle"></span> -->
+                <span>{{ 'EN ATTENTE DE FINALISATION' }}</span>
+              </nz-tag>
+
+
+              <nz-tag *ngSwitchCase="'-2'" nzColor="purple" class="status_item">
+                <!-- <span nz-icon nzType="exclamation-circle"></span> -->
+                <span>{{ 'NON ENVOYE A LA DGI' }}</span>
+              </nz-tag>
+              <!-- <nz-tag *ngSwitchCase="'NON ENVOYE'" nzColor="default" class="status_item">
+                <span nz-icon nzType="clock-circle"></span>
+                <span>{{ 'NON ENVOYE' }}</span>
+              </nz-tag> -->
+            </div>
+          </td>
+
+          <td style="width: 80px !important">
+            <div class="action-containers">
+              <a class="open-link_view_action2" title="Voir plus de détails" (click)="moreInformations(transaction)">
+                <fa-icon [icon]="faEye" class="icon"></fa-icon>
+              </a>
+              <a class="open-link_view_action2_inactive" title="Cette transaction a déjà une facture normalisée"
+                *ngIf="transaction.status == '0'">
+                <fa-icon [icon]="faArrow" class="icon"></fa-icon>
+              </a>
+
+              <a *ngIf="transaction.status != '0'" class="open-link_view_action2"
+                title="Demander la facture normalisée">
+                <fa-icon [icon]="faArrow" class="icon"></fa-icon>
+              </a>
+
+              <a class="open-link_view_action_jaun" title="Imprimer la facture" *ngIf="transaction.status == '0'"
+                (click)="printDGIInvoice(transaction)">
+                <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+              </a>
+              <a class="open-link_view_action2_inactive" title="Aucune facture trouvée pour cette transaction"
+                *ngIf="transaction.status != '0'">
+                <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+              </a>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </nz-table>
+  </div>
+</div>

@@ -1,0 +1,347 @@
+<div nz-row>
+  <div nz-col nzFlex="1">
+    <div class="shop-page">
+      <div class="shop-hero-card">
+        <div class="shop-hero-left">
+          <div class="shop-hero-icon">
+            <i nz-icon nzType="shop"></i>
+          </div>
+          <div class="shop-hero-texts">
+            <h2>Points de vente</h2>
+            <p>
+              <span class="hero-dot"></span>
+              {{ listOfData.length }} point(s) de vente enregistrés
+            </p>
+          </div>
+        </div>
+
+        <button
+          nz-button
+          nzType="primary"
+          nzSize="large"
+          class="btn-new shop-btn-new"
+          (click)="showUserModal()"
+        >
+          <i nz-icon nzType="plus"></i>
+          Nouveau point de vente
+        </button>
+      </div>
+
+      <div class="shop-content-card">
+        <div class="shop-search-row">
+          <div class="shop-search-wrap">
+            <nz-input-group [nzPrefix]="searchIconTpl">
+              <input
+                type="text"
+                nz-input
+                placeholder="Rechercher par nim, nom, adresse ou contact..."
+                [(ngModel)]="Filter"
+                class="shop-search-input"
+              />
+            </nz-input-group>
+          </div>
+
+          <button
+            nz-button
+            nzType="default"
+            class="shop-reset-btn"
+            (click)="refreshData()"
+            title="Actualiser"
+          >
+            <i nz-icon nzType="redo"></i>
+          </button>
+        </div>
+
+        <nz-table
+          [nzLoading]="loading"
+          #filterTable
+          class="shop-list-table"
+          [nzData]="listOfData"
+          nzTableLayout="fixed"
+          [nzPageSize]="10"
+          nzShowPagination
+          nzShowSizeChanger
+          [nzScroll]="{ x: '1300px' }"
+        >
+          <thead>
+            <tr>
+              <th>Nim</th>
+              <th>Nom</th>
+              <th>Adresse 1</th>
+              <th>Adresse 2</th>
+              <th>Adresse 3</th>
+              <th>Contact 1</th>
+              <th>Contact 2</th>
+              <th>Token</th>
+              <th class="shop-actions-cell">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of filterTable.data; let i = index">
+              <td class="shop-nim-cell">{{ data.nim }}</td>
+              <td>{{ data.shopName }}</td>
+              <td>{{ data.adress1 }}</td>
+              <td>{{ data.adress2 }}</td>
+              <td>{{ data.adress3 }}</td>
+              <td>{{ data.contact1 }}</td>
+              <td>{{ data.contact2 }}</td>
+              <td class="shop-token-cell">{{ data.token }}</td>
+              <td class="shop-actions-cell">
+                <button
+                  nz-button
+                  nzType="default"
+                  class="shop-action-btn"
+                  (click)="showEdtingModal(data)"
+                  title="Modifier"
+                >
+                  <span nz-icon nzTheme="outline" nzType="edit"></span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #searchIconTpl>
+    <i nz-icon nzType="search"></i>
+  </ng-template>
+
+  <nz-modal
+    [(nzVisible)]="isUserAddingMoalVisible"
+    nzTitle="Nouveau point de vente"
+    nzOkText="Créer"
+    nzCancelText="Annuler"
+    (nzOnCancel)="handleCancelUserModal()"
+    nzWidth="40%"
+    [nzFooter]="modalFooter"
+  >
+    <ng-container *nzModalContent>
+      <div nz-col>
+        <form
+          nz-form
+          [formGroup]="validateForm"
+          nz-space
+          nzAlign="start"
+          class="space-align-block"
+          #myform="ngForm"
+        >
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="nim"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Nim
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez le nim du point de vente"
+            >
+              <input
+                nz-input
+                formControlName="nim"
+                placeholder="Nim du point de vente"
+                name="nim"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="shopName"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Nom du point de vente
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez le nom  du point de vente"
+            >
+              <input
+                nz-input
+                formControlName="shopName"
+                placeholder="Le du point de vente"
+                name="token"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item nzJustify="center" style="margin-bottom: 10px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="token"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Token</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez le token du point de vente"
+            >
+              <textarea
+                rows="4"
+                nz-input
+                formControlName="token"
+                placeholder="token  du point de vente"
+                name="token"
+                class="custom-input"
+              ></textarea>
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="adress1"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Addresse 1
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez l'addresse 1 du point de vente"
+            >
+              <input
+                nz-input
+                formControlName="adress1"
+                placeholder="L'addresse 1 du point de vente"
+                name="adress1"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="adress2"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Addresse 2
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="L'addresse 2 du point de vente"
+            >
+              <input
+                nz-input
+                formControlName="adress2"
+                placeholder="L'addresse 2 du point de vente"
+                name="adress2"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="adress3"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Addresse 3
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="L'addresse 3 du point de vente"
+            >
+              <input
+                nz-input
+                formControlName="adress3"
+                placeholder="L'addresse 3 du point de vente"
+                name="adress3"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="contact1"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Contacte 1
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Le contact 1 du point de vente"
+            >
+              <input
+                nz-input
+                formControlName="contact1"
+                placeholder="Le contacte 1  du point de vente"
+                name="contact1"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="contact1"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Contacte 2
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Le contact 2 du point de vente"
+            >
+              <input
+                nz-input
+                formControlName="contact2"
+                placeholder="Le contacte 2  du point de vente"
+                name="contact2"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+        </form>
+      </div>
+    </ng-container>
+
+    <ng-template #modalFooter>
+      <div nz-row nzJustify="end" nzAlign="middle">
+        <nz-form-item nz-row class="register-area p-button">
+          <nz-form-control [nzSpan]="24" [nzOffset]="0">
+            <button
+              nz-button
+              nzType="primary"
+              (click)="saveOrUdate()"
+              name="Submit"
+              value="Login"
+              type="button"
+              [nzLoading]="isLoadingOne"
+            >
+              <!-- [disabled]="activeAction" -->
+              {{ !isEditing ? "Enregistrer" : "Modifier" }}
+            </button>
+            <button nz-button (click)="resetForm()" style="margin-left: 10px">
+              Annuler
+            </button>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </ng-template>
+  </nz-modal>
+</div>

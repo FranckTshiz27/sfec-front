@@ -1,0 +1,268 @@
+<div nz-row>
+  <div nz-col nzFlex="1">
+    <div class="rate-page">
+      <div class="rate-hero-card">
+        <div class="rate-hero-left">
+          <div class="rate-hero-icon">
+            <i nz-icon nzType="fund"></i>
+          </div>
+          <div class="rate-hero-texts">
+            <h2>Taux de change</h2>
+            <p>
+              <span class="hero-dot"></span>
+              {{ listOfData.length }} taux affiché(s)
+            </p>
+          </div>
+        </div>
+
+        <button
+          nz-button
+          nzType="primary"
+          nzSize="large"
+          class="btn-new rate-btn-new"
+          (click)="showUserModal()"
+        >
+          <i nz-icon nzType="plus"></i>
+          Nouveau taux
+        </button>
+      </div>
+
+      <div class="rate-content-card">
+        <div class="rate-search-row">
+          <div class="rate-search-wrap">
+            <nz-input-group [nzPrefix]="searchIconTpl">
+              <input
+                type="text"
+                nz-input
+                placeholder="Rechercher par source, date, taux ou statut..."
+                [(ngModel)]="Filter"
+                class="rate-search-input"
+              />
+            </nz-input-group>
+          </div>
+
+          <button
+            nz-button
+            nzType="default"
+            class="rate-reset-btn"
+            (click)="refreshData()"
+            title="Actualiser"
+          >
+            <i nz-icon nzType="redo"></i>
+          </button>
+        </div>
+
+        <div class="rate-filter-row">
+          <button
+            nz-button
+            [nzType]="!showOnlyActive ? 'primary' : 'default'"
+            class="rate-filter-btn"
+            (click)="getAll()"
+          >
+            Tous
+          </button>
+          <button
+            nz-button
+            [nzType]="showOnlyActive ? 'primary' : 'default'"
+            class="rate-filter-btn"
+            (click)="getActive()"
+          >
+            Actifs
+          </button>
+        </div>
+
+        <nz-table
+          [nzLoading]="loading"
+          #filterTable
+          class="rate-list-table"
+          [nzData]="listOfData"
+          nzTableLayout="fixed"
+          [nzPageSize]="10"
+          nzShowPagination
+          nzShowSizeChanger
+          [nzScroll]="{ x: '1000px' }"
+        >
+          <thead>
+            <tr>
+              <th>Taux</th>
+              <th>Date d'effet</th>
+              <th>Source</th>
+              <th>Statut</th>
+              <th>Créé le</th>
+              <th class="rate-actions-cell">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of filterTable.data">
+              <td class="rate-value-cell">{{ data.rate }}</td>
+              <td>{{ formatDate(data.effectiveDate) }}</td>
+              <td>{{ data.source || 'DGI' }}</td>
+              <td>
+                <nz-tag [nzColor]="data.active ? 'green' : 'default'">
+                  {{ data.active ? "Actif" : "Inactif" }}
+                </nz-tag>
+              </td>
+              <td>{{ formatDate(data.createdAt || '') }}</td>
+              <td class="rate-actions-cell">
+                <div class="rate-actions-wrap">
+                  <button
+                    nz-button
+                    nzType="default"
+                    class="rate-action-btn"
+                    (click)="showEditingModal(data)"
+                    title="Modifier"
+                  >
+                    <span nz-icon nzTheme="outline" nzType="edit"></span>
+                  </button>
+
+                  <button
+                    nz-button
+                    nzType="default"
+                    class="rate-action-btn rate-action-delete"
+                    (click)="delete(data)"
+                    title="Supprimer"
+                  >
+                    <span nz-icon nzTheme="outline" nzType="delete"></span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #searchIconTpl>
+    <i nz-icon nzType="search"></i>
+  </ng-template>
+
+  <nz-modal
+    [(nzVisible)]="isUserAddingMoalVisible"
+    [nzTitle]="!isEditing ? 'Nouveau taux' : 'Modifier le taux'"
+    nzOkText="Créer"
+    nzCancelText="Annuler"
+    (nzOnCancel)="handleCancelUserModal()"
+    nzWidth="40%"
+    [nzFooter]="modalFooter"
+  >
+    <ng-container *nzModalContent>
+      <div nz-col>
+        <form
+          nz-form
+          [formGroup]="validateForm"
+          nz-space
+          nzAlign="start"
+          class="space-align-block"
+          #myform="ngForm"
+        >
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="rate"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Taux</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez un taux valide (> 0)"
+            >
+              <input
+                nz-input
+                type="number"
+                min="0.0000001"
+                step="0.0000001"
+                formControlName="rate"
+                placeholder="Ex: 2800.00"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="effectiveDate"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Date d'effet</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez la date et l'heure d'effet"
+            >
+              <input
+                nz-input
+                type="datetime-local"
+                step="60"
+                formControlName="effectiveDate"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label [nzSpan]="24" nzFor="source" style="margin-bottom: 5px"
+              >Source</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="La source ne doit pas dépasser 100 caractères"
+            >
+              <input
+                nz-input
+                formControlName="source"
+                placeholder="Ex: DGI"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label [nzSpan]="24" nzFor="active" style="margin-bottom: 5px"
+              >Statut</nz-form-label
+            >
+            <nz-form-control [nzSpan]="24">
+              <nz-select formControlName="active" class="custom-input">
+                <nz-option [nzValue]="true" nzLabel="Actif"></nz-option>
+                <nz-option [nzValue]="false" nzLabel="Inactif"></nz-option>
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        </form>
+      </div>
+    </ng-container>
+
+    <ng-template #modalFooter>
+      <div nz-row nzJustify="end" nzAlign="middle">
+        <nz-form-item nz-row class="register-area p-button">
+          <nz-form-control [nzSpan]="24" [nzOffset]="0">
+            <button
+              nz-button
+              nzType="primary"
+              (click)="saveOrUpdate()"
+              type="button"
+              [nzLoading]="isLoadingOne"
+            >
+              {{ !isEditing ? "Enregistrer" : "Modifier" }}
+            </button>
+            <button
+              nz-button
+              (click)="handleCancelUserModal()"
+              style="margin-left: 10px"
+            >
+              Annuler
+            </button>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </ng-template>
+  </nz-modal>
+</div>

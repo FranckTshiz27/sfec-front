@@ -1,0 +1,388 @@
+<div class="invoice-search-card">
+  <div class="search-card-header">
+    <div class="search-card-heading">
+      <div class="search-card-icon">
+        <i nz-icon nzType="search" nzTheme="outline"></i>
+      </div>
+      <div class="search-card-titles">
+        <h3 class="search-card-title">Rechercher un encaissement</h3>
+        <p class="search-card-subtitle">
+          Recherchez par numéro de police ou filtrez par période
+        </p>
+      </div>
+    </div>
+
+    <div class="search-card-actions">
+      <button
+        nz-button
+        [nzSize]="size"
+        class="search-btn-reset"
+        [disabled]="isInvoiceRequestLoading"
+        (click)="resetSearch()"
+      >
+        <i nz-icon nzType="undo"></i>
+        Réinitialiser
+      </button>
+    </div>
+  </div>
+
+  <div class="search-card-body">
+    <div class="search-panel search-panel-policy">
+      <div class="search-panel-label">
+        <span class="panel-icon panel-icon-blue">
+          <i nz-icon nzType="safety-certificate" nzTheme="outline"></i>
+        </span>
+        <span>Par numéro de police</span>
+        <i nz-icon nzType="info-circle" nzTheme="fill" class="label-info-icon"></i>
+      </div>
+
+      <div class="search-inline-row">
+        <nz-input-group
+          [nzPrefix]="policyPrefixIcon"
+          [nzSuffix]="policyClearIcon"
+          class="policy-search-group"
+        >
+          <input
+            nz-input
+            [(ngModel)]="policySearchText"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Ex. : intermédiaire-numero police - avenant"
+            class="policy-search-input"
+          />
+        </nz-input-group>
+
+        <button
+          nz-button
+          nzType="primary"
+          [nzSize]="size"
+          class="search-btn-primary panel-search-btn"
+          [disabled]="isInvoiceRequestLoading"
+          (click)="applyPolicySearch()"
+        >
+          <i nz-icon nzType="search"></i>
+          Rechercher
+        </button>
+      </div>
+
+      <span class="search-hint">Saisissez le numéro de votre police ou avenant</span>
+    </div>
+
+    <div class="search-divider">
+      <span>OU</span>
+    </div>
+
+    <div class="search-panel search-panel-period">
+      <form [formGroup]="validateForm" class="period-form">
+        <div class="search-panel-label">
+          <span class="panel-icon panel-icon-green">
+            <i nz-icon nzType="calendar" nzTheme="outline"></i>
+          </span>
+          <span>Par période</span>
+          <i nz-icon nzType="info-circle" nzTheme="fill" class="label-info-icon"></i>
+        </div>
+
+        <div class="search-inline-row">
+          <nz-range-picker
+            class="date-range-picker"
+            [(ngModel)]="dateArray"
+            formControlName="date"
+            (ngModelChange)="onChange($event)"
+          >
+          </nz-range-picker>
+
+          <button
+            nz-button
+            nzType="primary"
+            [nzSize]="size"
+            class="search-btn-primary panel-search-btn"
+            [disabled]="isInvoiceRequestLoading"
+            (click)="getAll()"
+          >
+            <i nz-icon nzType="search"></i>
+            Rechercher
+          </button>
+        </div>
+
+        <span class="search-hint">Sélectionnez la période souhaitée</span>
+      </form>
+    </div>
+  </div>
+
+  <div class="search-card-tip">
+    <i nz-icon nzType="info-circle" nzTheme="fill" class="tip-icon"></i>
+    <p>
+      <strong>Conseil :</strong>
+      Utilisez le numéro de police pour une recherche précise ou la période pour voir tous les encaissements sur une plage de dates.
+    </p>
+  </div>
+</div>
+
+<ng-template #policyPrefixIcon>
+  <i nz-icon nzType="search" class="input-prefix-icon"></i>
+</ng-template>
+
+<ng-template #policyClearIcon>
+  <i
+    nz-icon
+    nzType="close-circle"
+    class="input-clear-icon"
+    *ngIf="policySearchText"
+    (click)="policySearchText = ''"
+  ></i>
+</ng-template>
+
+<nz-table [nzLoading]="loading" #filterTable [nzData]="filteredInvoices" nzShowPagination nzShowSizeChanger
+  [nzFrontPagination]="true" [nzPageSize]="6" class="policies-table">
+
+  <thead class="customized-header">
+    <tr>
+      <th>Clé</th>
+      <th>Intermédiaire</th>
+      <th>N° Police</th>
+      <th>N° Avenant</th>
+      <th>N° Facture</th>
+      <th>Type Facture</th>
+      <th>Date Encaissement</th>
+      <th>Article</th>
+      <th style="width: 130px; text-align: center;">Statut SFEC</th>
+      <th style="width: 120px; text-align: center;">Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr *ngFor="let invoice of filterTable.data">
+      <td>
+        <span class="invoice-cle-blue">{{ invoice.cle }}</span>
+      </td>
+
+      <td>{{ invoice.codeInte }}</td>
+
+      <td>{{ invoice.numePoli }}</td>
+
+      <td>{{ invoice.numeAven }}</td>
+
+      <td>
+        <strong>{{ invoice.rn }}</strong>
+      </td>
+
+      <td>
+        <nz-tag nzColor="blue">
+          {{ invoice.typeFacture }}
+        </nz-tag>
+      </td>
+
+      <td>
+        {{ invoice.dateEncaissement | date : 'dd/MM/yyyy' }}
+      </td>
+
+      <td nzEllipsis>
+        {{ invoice.nameArticle }}
+      </td>
+
+      <td class="normalization-cell">
+        <nz-tag
+          class="normalization-tag"
+          [nzColor]="getNormalizationTagColor(invoice)"
+          nz-tooltip
+          [nzTooltipTitle]="getQrCodeTooltip(invoice)"
+        >
+          <i nz-icon [nzType]="getNormalizationIcon(invoice)" nzTheme="fill"></i>
+          {{ getNormalizationStatusLabel(invoice) }}
+        </nz-tag>
+      </td>
+
+  
+      <td style="width: 80px !important">
+        <div class="action-containers">
+          <button
+            type="button"
+            (click)="moreInformations(invoice)"
+            class="open-link_view_action2 action-btn-reset"
+            title="Voir plus de détails"
+            [disabled]="isInvoiceRequestLoading"
+          >
+            <fa-icon [icon]="faEye" class="icon"></fa-icon>
+          </button>
+          <button
+            type="button"
+            class="open-link_view_action2_inactive action-btn-reset"
+            title="Cet encaissement a déjà une facture normalisée"
+            *ngIf="isNormalized(invoice)"
+            disabled
+          >
+            <fa-icon [icon]="faArrow" class="icon"></fa-icon>
+          </button>
+
+          <button
+            type="button"
+            *ngIf="!isNormalized(invoice)"
+            class="open-link_view_action2 action-btn-reset"
+            title="Demander la facture normalisée"
+            [disabled]="isInvoiceRequestLoading"
+            (click)="createInvoice(invoice)"
+          >
+            <fa-icon [icon]="faArrow" class="icon"></fa-icon>
+          </button>
+
+          <button
+            type="button"
+            class="open-link_view_action_jaun action-btn-reset"
+            title="Imprimer la facture"
+            *ngIf="isNormalized(invoice)"
+            [disabled]="isInvoiceRequestLoading"
+            (click)="printDGIInvoice(invoice)"
+          >
+            <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+          </button>
+          <button
+            type="button"
+            class="open-link_view_action2_inactive action-btn-reset"
+            title="Aucune facture trouvée pour cet encaissement"
+            *ngIf="!isNormalized(invoice)"
+            disabled
+          >
+            <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+          </button>
+        </div>
+      </td>
+     
+    </tr>
+  </tbody>
+
+</nz-table>
+<nz-drawer
+  nzWrapClassName="invoice-detail-drawer"
+  [nzBodyStyle]="{ overflow: 'auto' }"
+  [nzMaskClosable]="false"
+  [nzWidth]="950"
+  [nzVisible]="visible_view"
+  nzTitle="Autres informations de la facture"
+  (nzOnClose)="closeDrawer()"
+>
+  <div *nzDrawerContent>
+    <nz-divider class="drawer-section-divider" nzText="Informations générales du certificat">
+      Informations du client
+    </nz-divider>
+    <nz-descriptions class="drawer-descriptions" nzTitle="" nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="Prix">
+        {{ selectedInvoice?.price }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Groupe de taxation">{{ selectedInvoice?.taxeGroup }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Nom du client">{{ selectedInvoice?.nom }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Addresse client">{{
+        selectedInvoice?.adresse
+        }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Téléphone">{{
+        selectedInvoice?.contact ? selectedInvoice?.contact : "-"
+        }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Type client">{{
+        selectedInvoice?.genRassu
+        }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Type de paiement">{{
+        selectedInvoice?.typePaiement
+        }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Code de la devise">{{
+        selectedInvoice?.currencyCode
+        }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="NIF">{{
+        selectedInvoice?.nif
+        }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Prime">{{
+        selectedInvoice?.prime
+        }}</nz-descriptions-item>
+
+      <nz-descriptions-item nzTitle="Tva">{{
+        selectedInvoice?.tva
+        }}</nz-descriptions-item>
+
+      <nz-descriptions-item nzTitle="Statut SFEC">
+        <nz-tag [nzColor]="getQrCodeTagColor(selectedInvoice)">
+          {{ getQrCodeStatusLabel(selectedInvoice) }}
+        </nz-tag>
+      </nz-descriptions-item>
+
+      <nz-descriptions-item nzTitle="QR Code" [nzSpan]="3">
+        <ng-container *ngIf="getDrawerQrImage(selectedInvoice) as drawerQr; else drawerQrEmpty">
+          <div class="drawer-qr-block">
+            <img
+              class="invoice-qr-image invoice-qr-image-large"
+              [src]="drawerQr"
+              [alt]="'QR code ' + selectedInvoice.cle"
+            />
+            <span class="drawer-qr-value" *ngIf="getQrCodeValue(selectedInvoice) !== 'QR code certifié SFEC'">
+              {{ getQrCodeValue(selectedInvoice) }}
+            </span>
+            <button
+              nz-button
+              nzType="default"
+              class="drawer-qr-download-btn"
+              (click)="downloadDrawerQr(selectedInvoice)"
+            >
+              <i nz-icon nzType="download"></i>
+              Télécharger le QR code
+            </button>
+          </div>
+        </ng-container>
+
+        <ng-template #drawerQrEmpty>
+          <div class="drawer-qr-empty">
+            <div
+              class="qr-empty-state qr-empty-state-drawer"
+              [ngClass]="{
+                'qr-empty-state-pending': getQrCodeDisplayState(selectedInvoice) === 'not_certified',
+                'qr-empty-state-warning': getQrCodeDisplayState(selectedInvoice) === 'unavailable',
+                'qr-empty-state-error': getQrCodeDisplayState(selectedInvoice) === 'failed'
+              }"
+            >
+              <span class="qr-empty-icon-lg">
+                <i
+                  nz-icon
+                  [nzType]="
+                    getQrCodeDisplayState(selectedInvoice) === 'failed'
+                      ? 'close-circle'
+                      : getQrCodeDisplayState(selectedInvoice) === 'unavailable'
+                      ? 'warning'
+                      : 'qrcode'
+                  "
+                  [nzTheme]="
+                    getQrCodeDisplayState(selectedInvoice) === 'not_certified' ? 'outline' : 'fill'
+                  "
+                ></i>
+              </span>
+              <nz-tag class="qr-status-tag qr-status-tag-drawer" [nzColor]="getQrCodeTagColor(selectedInvoice)">
+                {{ getQrCodeStatusLabel(selectedInvoice) }}
+              </nz-tag>
+              <span class="qr-empty-hint">{{ getQrCodeTooltip(selectedInvoice) }}</span>
+            </div>
+          </div>
+        </ng-template>
+      </nz-descriptions-item>
+
+      <ng-container *ngIf="selectedInvoice?.sfec_response as sfecResponse">
+        <nz-descriptions-item nzTitle="N° certification">
+          {{ sfecResponse.certification_number || '-' }}
+        </nz-descriptions-item>
+        <nz-descriptions-item nzTitle="N° facture SFEC">
+          {{ sfecResponse.invoice_number || '-' }}
+        </nz-descriptions-item>
+        <nz-descriptions-item nzTitle="Date certification">
+          {{ sfecResponse.certification_date | date : 'dd/MM/yyyy HH:mm:ss' }}
+        </nz-descriptions-item>
+      </ng-container>
+
+    </nz-descriptions>
+
+    <div class="drawer-footer-actions">
+      <button nz-button nzType="default" class="drawer-close-btn" (click)="closeDrawer()">Fermer</button>
+    </div>
+  </div>
+</nz-drawer>
+
+<div *ngIf="isInvoiceRequestLoading" class="invoice-request-loader-overlay" aria-live="polite">
+  <div class="invoice-request-loader-content">
+    <nz-spin nzSimple [nzSize]="'large'"></nz-spin>
+    <p>Demande de facture en cours...</p>
+  </div>
+</div>

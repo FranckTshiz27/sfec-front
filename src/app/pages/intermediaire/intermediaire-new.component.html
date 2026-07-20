@@ -1,0 +1,222 @@
+<div nz-row>
+  <div nz-col nzFlex="1">
+    <div class="interm-page">
+      <div class="interm-hero-card">
+        <div class="interm-hero-left">
+          <div class="interm-hero-icon">
+            <i nz-icon nzType="team"></i>
+          </div>
+          <div class="interm-hero-texts">
+            <h2>Intermédiaires</h2>
+            <p>
+              <span class="hero-dot"></span>
+              {{ listOfData.length }} intermédiaires enregistrés
+            </p>
+          </div>
+        </div>
+
+        <button
+          nz-button
+          nzType="primary"
+          nzSize="large"
+          class="btn-new interm-btn-new"
+          (click)="showUserModal()"
+        >
+          <i nz-icon nzType="plus"></i>
+          Nouvel intermédiaire
+        </button>
+      </div>
+
+      <div class="interm-content-card">
+        <div class="interm-search-row">
+          <div class="interm-search-wrap">
+            <nz-input-group [nzPrefix]="searchIconTpl">
+              <input
+                type="text"
+                nz-input
+                placeholder="Rechercher par nom, code ou dénomination..."
+                [(ngModel)]="Filter"
+                class="interm-search-input"
+              />
+            </nz-input-group>
+          </div>
+
+          <button
+            nz-button
+            nzType="default"
+            class="interm-reset-btn"
+            (click)="refreshData()"
+            title="Actualiser"
+          >
+            <i nz-icon nzType="redo"></i>
+          </button>
+        </div>
+
+        <nz-table
+          [nzLoading]="loading"
+          #filterTable
+          class="interm-list-table"
+          [nzData]="listOfData"
+          nzTableLayout="fixed"
+          [nzPageSize]="7"
+          nzShowPagination
+          nzShowSizeChanger
+        >
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Dénomination</th>
+              <th>Type</th>
+              <th class="interm-actions-cell">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of filterTable.data; let i = index">
+              <td class="interm-code-cell">{{ data.code }}</td>
+              <td>{{ data.name }}</td>
+              <td>{{ data.intermediaryType }}</td>
+              <td class="interm-actions-cell">
+                <button
+                  nz-button
+                  nzType="default"
+                  class="interm-action-btn"
+                  (click)="showEdtingModal(data)"
+                  title="Modifier"
+                >
+                  <span nz-icon nzTheme="outline" nzType="edit"></span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #searchIconTpl>
+    <i nz-icon nzType="search"></i>
+  </ng-template>
+
+  <nz-modal
+    [(nzVisible)]="isUserAddingMoalVisible"
+    nzTitle="Nouvel intermediaire"
+    nzOkText="Créer"
+    nzCancelText="Annuler"
+    (nzOnCancel)="handleCancelUserModal()"
+    nzWidth="40%"
+    [nzFooter]="modalFooter"
+  >
+    <ng-container *nzModalContent>
+      <div nz-col>
+        <form
+          nz-form
+          [formGroup]="validateForm"
+          nz-space
+          nzAlign="start"
+          class="space-align-block"
+          #myform="ngForm"
+        >
+          <nz-form-item nzJustify="center" style="margin-bottom: 10px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="name"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Nom de l'intermediare</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez le nom de l'intermediare"
+            >
+              <input
+                nz-input
+                formControlName="name"
+                placeholder="Nom de l'intermediare"
+                name="name"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="code"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Code de l'intermediare</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez le code de l'intermediare"
+            >
+              <input
+                nz-input
+                formControlName="code"
+                placeholder="Code de l'intermediare"
+                name="code"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item nzJustify="center">
+            <nz-form-label [nzSpan]="24" nzFor="interm" nzRequired
+              >Type intermédiaire</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzErrorTip="Vous devez selectionner le type de l'intermédiaire"
+            >
+              <nz-select
+                id="typeInterm"
+                nzShowSearch
+                nzAllowClear
+                formControlName="typeInterm"
+                nzPlaceHolder="Selectionnez le type de l'intermédiaire"
+                (ngModelChange)="typeIntermediaireChange($event)"
+                class="custom-input"
+              >
+                <nz-option
+                  *ngFor="let item of listTypeIntermediaire"
+                  nzValue="{{ item }}"
+                  nzLabel="{{ item }}"
+                >
+                  {{ item }}
+                </nz-option>
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        </form>
+      </div>
+    </ng-container>
+
+    <ng-template #modalFooter>
+      <div nz-row nzJustify="end" nzAlign="middle">
+        <nz-form-item nz-row class="register-area p-button">
+          <nz-form-control [nzSpan]="24" [nzOffset]="0">
+            <button
+              nz-button
+              nzType="primary"
+              (click)="saveOrUdate()"
+              name="Submit"
+              value="Login"
+              type="button"
+              [nzLoading]="isLoadingOne"
+            >
+              <!-- [disabled]="activeAction" -->
+              {{ !isEditing ? "Enregistrer" : "Modifier" }}
+            </button>
+            <button nz-button (click)="resetForm()" style="margin-left: 10px">
+              Annuler
+            </button>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </ng-template>
+  </nz-modal>
+</div>

@@ -1,0 +1,252 @@
+<div class="entreprise-selector-page" *ngIf="showEntrepriseSelector">
+  <div class="selector-shell">
+    <div class="selector-topbar">
+      <div class="selector-brand">
+        <img class="selector-brand-logo" src="assets/rawsurlogo.jpg" alt="Rawsur logo" />
+        <div class="selector-brand-text">
+          <h3>EDEF</h3>
+          <span>INTEGRATION DGI</span>
+        </div>
+      </div>
+      <div class="selector-top-actions">
+        <button nz-button nzType="default" class="topbar-btn">
+          <i nz-icon nzType="question-circle"></i>
+          Aide
+        </button>
+        <button nz-button nzType="default" class="topbar-btn">
+          <i nz-icon nzType="global"></i>
+          Français
+        </button>
+      </div>
+    </div>
+
+    <div class="entreprise-selector-card">
+      <div class="selector-icon-circle">
+        <i nz-icon nzType="bank"></i>
+      </div>
+      <div class="entreprise-selector-head">
+        <h2>Choisissez une entreprise</h2>
+        <p>Sélectionnez l'entreprise avec laquelle vous souhaitez continuer.</p>
+      </div>
+
+      <div class="entreprise-list">
+        <button
+          nz-button
+          nzType="default"
+          class="entreprise-item-btn"
+          *ngFor="let item of userEntreprises"
+          [ngClass]="{
+            'is-selected': selectedEntrepriseId === item?.entreprise?.id,
+            'is-disabled': !isEntrepriseAccessible(item)
+          }"
+          (click)="selectEntreprise(item)"
+        >
+          <div class="ent-left">
+            <div class="ent-logo-wrap">
+              <i nz-icon nzType="bank"></i>
+            </div>
+            <div class="ent-main">
+              <div class="ent-name">{{ item?.entreprise?.nom || '-' }}</div>
+              <div class="ent-subtitle">Assurance Générale</div>
+            </div>
+          </div>
+          <div class="ent-middle">
+            <span>Code</span>
+            <strong>{{ item?.entreprise?.code || '-' }}</strong>
+          </div>
+          <div class="ent-middle">
+            <span>NIF</span>
+            <strong>{{ item?.entreprise?.nif || '-' }}</strong>
+          </div>
+          <div class="ent-right">
+            <i
+              nz-icon
+              [nzType]="
+                !isEntrepriseAccessible(item)
+                  ? 'lock'
+                  : (
+                selectedEntrepriseId === item?.entreprise?.id
+                  ? 'check-circle'
+                  : 'minus-circle'
+                  )
+              "
+              [ngClass]="{
+                'state-selected': selectedEntrepriseId === item?.entreprise?.id,
+                'state-disabled': !isEntrepriseAccessible(item)
+              }"
+            ></i>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="selector-footer">
+      <button
+        nz-button
+        nzType="primary"
+        class="selector-continue-btn"
+        [disabled]="!canContinueWithSelectedEntreprise()"
+        (click)="continueWithEntreprise()"
+      >
+        Continuer
+        <i nz-icon nzType="arrow-right"></i>
+      </button>
+      <p>Vos données sont sécurisées et confidentielles.</p>
+    </div>
+  </div>
+</div>
+
+<nz-layout class="app-layout" *ngIf="!showEntrepriseSelector">
+  <!-- SIDEBAR -->
+  <nz-sider
+    class="menu-sidebar"
+    nzCollapsible
+    nzWidth="270px"
+    nzBreakpoint="md"
+    [(nzCollapsed)]="isCollapsed"
+    [nzTrigger]="null"
+  >
+    <!-- LOGO -->
+    <div class="sidebar-logo">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <img class="brand-logo" src="assets/rawsurlogo.jpg" alt="Rawsur logo" />
+        </div>
+
+        <div class="logo-text" *ngIf="!isCollapsed">
+          <div class="logo-title-row">
+            <h1>Facture</h1>
+            <span class="logo-tag">DGI</span>
+          </div>
+          <span>Normalisée</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENU -->
+    <ul
+      nz-menu
+      nzTheme="light"
+      nzMode="inline"
+      [nzInlineCollapsed]="isCollapsed"
+      class="custom-menu"
+    >
+      <!-- MENU -->
+      <li nz-submenu nzOpen nzTitle="Menu" nzIcon="home" class="menu-section">
+        <ul>
+          <li nz-menu-item nzMatchRouter class="menu-entry">
+            <a routerLink="home/invoice">
+              <span>Factures</span>
+            </a>
+          </li>
+
+          <li nz-menu-item nzMatchRouter class="menu-entry">
+            <a routerLink="home/transaction">
+              <span>Historique</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <!-- ADMIN -->
+      <li
+        nz-submenu
+        nzOpen
+        nzTitle="Administration"
+        nzIcon="setting"
+        class="menu-section"
+        *ngIf="authService.isAdmin()"
+      >
+        <ul>
+          <li nz-menu-item nzMatchRouter routerLink="shop" class="menu-entry">
+            <a>Points de vente</a>
+          </li>
+
+          <li nz-menu-item nzMatchRouter routerLink="intermediaire" class="menu-entry">
+            <a>Intermédiaires</a>
+          </li>
+
+          <!-- <li nz-menu-item nzMatchRouter routerLink="rapports" class="menu-entry">
+            <a>Rapports</a>
+          </li> -->
+
+          <li nz-menu-item nzMatchRouter routerLink="user" class="menu-entry">
+            <a>Utilisateurs</a>
+          </li>
+
+          <li nz-menu-item nzMatchRouter routerLink="taux" class="menu-entry">
+            <a>Taux</a>
+          </li>
+
+          <li nz-menu-item nzMatchRouter routerLink="entreprise" class="menu-entry">
+            <a>Entreprise</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </nz-sider>
+
+  <!-- MAIN -->
+  <nz-layout>
+    <!-- HEADER -->
+    <nz-header>
+      <div class="app-header">
+        <!-- LEFT -->
+        <div class="header-left">
+          <div
+            class="header-trigger"
+            (click)="isCollapsed = !isCollapsed"
+          >
+            <span
+              nz-icon
+              [nzType]="isCollapsed ? 'menu-unfold' : 'menu-fold'"
+            ></span>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="header-right">
+          <div class="profile-card" #buttonGroup>
+            <div class="profile-info">
+              <span class="profile-label">Bienvenue</span>
+              <span class="username">{{ username }}</span>
+            </div>
+            <div class="selected-entreprise-chip" *ngIf="selectedEntreprise?.nom">
+              {{ selectedEntreprise?.nom }}
+            </div>
+
+            <button
+              nz-button
+              nz-dropdown
+              [nzDropdownMenu]="menu2"
+              nzPlacement="bottomRight"
+              class="profile-button"
+            >
+              <i nz-icon nzType="user"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- DROPDOWN -->
+        <nz-dropdown-menu
+          #menu2="nzDropdownMenu"
+          [nzOverlayStyle]="{ width: dropdownWidth + 'px' }"
+        >
+          <ul nz-menu class="custom-dropdown-menu">
+            <li nz-menu-item (click)="logout()">
+              <i nz-icon nzType="logout"></i>
+              Déconnexion
+            </li>
+          </ul>
+        </nz-dropdown-menu>
+      </div>
+    </nz-header>
+
+    <!-- CONTENT -->
+    <nz-content>
+      <div class="inner-content">
+        <router-outlet></router-outlet>
+      </div>
+    </nz-content>
+  </nz-layout>
+</nz-layout>

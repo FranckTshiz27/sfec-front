@@ -1,0 +1,17 @@
+<div class="container">
+  <div>
+    <nz-breadcrumb nzSeparator="/" >
+      <nz-breadcrumb-item (click)="changeFocus($event)" nzName="policy"  class="link" *ngIf="!policyService.isPolicySelected"> Police </nz-breadcrumb-item>
+      <nz-breadcrumb-item (click)="changeFocus($event)" nzName="policy" class="selectedLink" *ngIf="policyService.isPolicySelected"> Police </nz-breadcrumb-item>
+
+      <nz-breadcrumb-item (click)="changeFocus($event)" nzName="risk" class="link" *ngIf="policyService.isPolicySelected">Véhicules</nz-breadcrumb-item>
+      <nz-breadcrumb-item (click)="changeFocus($event)" nzName="risk" class="selectedLink" *ngIf="!policyService.isPolicySelected">Véhicules</nz-breadcrumb-item>
+    </nz-breadcrumb>
+  </div>
+
+  <div>
+    <app-policy-list *ngIf="policyService.isPolicySelected"></app-policy-list>
+
+    <app-risk-list  *ngIf="!policyService.isPolicySelected"></app-risk-list>
+  </div>
+</div>

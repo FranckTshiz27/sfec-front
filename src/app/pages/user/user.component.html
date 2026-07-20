@@ -1,0 +1,564 @@
+<div nz-col nzSpan="24" nzJustify="center">
+  <div class="user-page">
+    <div class="user-hero-card">
+      <div class="user-hero-left">
+        <div class="user-hero-icon">
+          <i nz-icon nzType="usergroup-add"></i>
+        </div>
+        <div class="user-hero-texts">
+          <h2>Utilisateurs</h2>
+          <p>
+            <span class="hero-dot"></span>
+            {{ filteredusers?.length }} utilisateur{{
+              users != null && users.length <= 1 ? '' : 's'
+            }} enregistré{{ users != null && users.length <= 1 ? '' : 's' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="user-content-card">
+      <div class="user-search-row">
+        <div class="user-search-wrap">
+          <nz-input-group [nzPrefix]="searchIconTpl">
+            <input
+              type="text"
+              nz-input
+              class="user-search-input"
+              placeholder="Rechercher par nom, prénom ou nom d'utilisateur..."
+              [(ngModel)]="FilterUser"
+            />
+          </nz-input-group>
+        </div>
+
+        <button
+          nz-button
+          nzType="default"
+          class="user-reset-btn"
+          title="Actualiser la liste des utilisateurs"
+          (click)="getUsers()"
+        >
+          <i nz-icon nzType="redo"></i>
+        </button>
+      </div>
+
+      <nz-table
+        [nzLoading]="loadingUsers"
+        #filterTable
+        class="user-list-table"
+        [nzData]="filteredusers!"
+        nzTableLayout="fixed"
+        [nzPageSize]="7"
+        nzShowPagination
+        nzShowSizeChanger
+      >
+        <thead>
+          <tr>
+            <th>Nom d'utilisateur</th>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th>Point de vente</th>
+            <th class="user-actions-cell">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let data of filterTable.data; let i = index">
+            <td class="user-code-cell">{{ data.keycloakId }}</td>
+            <td>{{ data.lname }}</td>
+            <td>{{ data.fname }}</td>
+            <td>{{ data.userShop?.shop?.shopName ?? '-' }}</td>
+            <td class="user-actions-cell">
+              <button
+                nz-button
+                nzType="default"
+                class="user-action-btn"
+                title="Plus d'informations"
+                (click)="open(data)"
+              >
+                <fa-icon [icon]="faEye"></fa-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+    </div>
+  </div>
+</div>
+<ng-template #searchIconTpl>
+  <i nz-icon nzType="search"></i>
+</ng-template>
+<nz-drawer [nzBodyStyle]="{ overflow: 'auto' }" [nzMaskClosable]="false" [nzWidth]="720" [nzVisible]="visible_view"
+  nzTitle="Informations de l'utilisateur" (nzOnClose)="closeView()">
+  <!-- [nzFooter]="footerTpButton" -->
+  <div *nzDrawerContent>
+    <div class="drawer-user-header">
+      <h3 class="drawer-user-title">{{ selectedUser?.lname }} {{ selectedUser?.lname }}</h3>
+      <button
+        nz-button
+        nzType="primary"
+        class="global-save-btn"
+        [nzLoading]="savigUserInterms"
+        [disabled]="savigUserInterms"
+        (click)="saveAllAssignments()"
+        title="Valider toutes les affectations"
+      >
+        <fa-icon [icon]="faIcon" class="global-save-icon"></fa-icon>
+        Enregistrer les affectations
+      </button>
+    </div>
+    <nz-divider nzText="Intermediaires"></nz-divider>
+    <div nz-row>
+      <div nz-col nzFlex="1">
+        <div>
+          <div class="contenaireBar" style="
+              padding: 10px 24px;
+              width: 100%;
+              display: flex;
+              justify-content: space-between;
+              background: #d7e3ff2e;
+              border-bottom: 0.5px solid #e8e8e826;
+              margin-bottom: 20px;
+              align-items: center;
+              box-shadow: 0 1px 3px rgba(131, 130, 130, 0.05);
+            ">
+            <div nz-col nzSpan="24" nzJustify="center">
+              <div nz-row nzSpan="24" nzJustify="center" nzAlign="middle">
+                <div nz-col nzSpan="15">
+                  <nz-input-group nzSearch>
+                    <input type="text" nz-input placeholder="Rechercher un intermédiaire par sa dénomination!"
+                      [(ngModel)]="Filter" class="custom-input" />
+                  </nz-input-group>
+                </div>
+                <div nz-col nzSpan="1" nzJustify="center">
+                  <button nz-button nzType="primary" [nzSize]="size" style="
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 40%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      transition: all 0.3s ease;
+                      margin-left: 10px;
+                    " class="refresh-btn">
+                    <i nz-icon nzType="sync" nzTheme="outline"></i>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <nz-table [nzLoading]="loading" #filterTable [nzData]="listOfData" nzTableLayout="fixed" [nzPageSize]="6"
+            nzShowPagination nzShowSizeChanger>
+            <thead>
+              <tr>
+                <th>Dénomination</th>
+                <th>Code</th>
+                <th>Catégorie</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let data of filterTable.data; let i = index">
+                <td>{{ data.name }}</td>
+                <td>{{ data.code }}</td>
+                <!-- <td>{{ data.codeArca }}</td> -->
+                <td>{{ data.intermediaryType }}</td>
+
+                <td nzRight>
+                  <div class="action-containers" style="padding-left: 10px">
+                    <label nz-checkbox [(ngModel)]="data.belongsTo"></label>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </nz-table>
+        </div>
+      </div>
+
+      <nz-divider nzText="Entreprises"></nz-divider>
+
+      <div nz-col nzFlex="1">
+        <div>
+          <div class="contenaireBar" style="
+              padding: 10px 24px;
+              width: 100%;
+              display: flex;
+              justify-content: space-between;
+              background: #d7e3ff2e;
+              border-bottom: 0.5px solid #e8e8e826;
+              margin-bottom: 20px;
+              align-items: center;
+              box-shadow: 0 1px 3px rgba(131, 130, 130, 0.05);
+            ">
+            <div nz-col nzSpan="24" nzJustify="center">
+              <div nz-row nzSpan="24" nzJustify="center" nzAlign="middle">
+
+                <div nz-col nzSpan="15">
+                  <nz-input-group nzSearch>
+                    <input
+                      type="text"
+                      nz-input
+                      placeholder="Rechercher une entreprise par code, nif ou nom!"
+                      [(ngModel)]="FilterEntreprise"
+                      class="custom-input"
+                    />
+                  </nz-input-group>
+                </div>
+
+
+
+                <div nz-col nzSpan="1" nzJustify="center">
+                  <button nz-button nzType="primary" [nzSize]="size" style="
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 40%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      transition: all 0.3s ease;
+                      margin-left: 10px;
+                    " (click)="getEntreprises()" class="refresh-btn">
+                    <i nz-icon nzType="sync" nzTheme="outline"></i>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <nz-table
+            [nzLoading]="loading"
+            #filterEntreprises
+            [nzData]="entreprises"
+            nzTableLayout="fixed"
+            [nzPageSize]="6"
+            nzShowPagination
+            nzShowSizeChanger
+          >
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>NIF</th>
+                <th>Nom</th>
+                <th>Affecté</th>
+                <th>Etat actif</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entreprise of filterEntreprises.data; let i = index">
+                <td>{{ entreprise.code }}</td>
+                <td>{{ entreprise.nif }}</td>
+                <td>{{ entreprise.nom }}</td>
+                <td nzRight>
+                  <div class="action-containers" style="padding-left: 10px">
+                    <label
+                      nz-checkbox
+                      [(ngModel)]="entreprise.belongsTo"
+                      (ngModelChange)="onEntrepriseSelectionChange(entreprise)"
+                    ></label>
+                  </div>
+                </td>
+                <td nzRight>
+                  <div class="action-containers" style="padding-left: 10px">
+                    <label
+                      nz-checkbox
+                      [(ngModel)]="entreprise.isActive"
+                      [nzDisabled]="!entreprise.belongsTo"
+                    ></label>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </nz-table>
+        </div>
+      </div>
+
+      <nz-divider nzText="Points de vente"></nz-divider>
+
+      <div nz-col nzFlex="1">
+        <div>
+          <div class="contenaireBar" style="
+              padding: 10px 24px;
+              width: 100%;
+              display: flex;
+              justify-content: space-between;
+              background: #d7e3ff2e;
+              border-bottom: 0.5px solid #e8e8e826;
+              margin-bottom: 20px;
+              align-items: center;
+              box-shadow: 0 1px 3px rgba(131, 130, 130, 0.05);
+            ">
+            <div nz-col nzSpan="24" nzJustify="center">
+              <div nz-row nzSpan="24" nzJustify="center" nzAlign="middle">
+                <div nz-col nzSpan="15">
+                  <nz-input-group nzSearch>
+                    <input
+                      type="text"
+                      nz-input
+                      placeholder="Rechercher un point de vente par nom, nim ou adresse!"
+                      [(ngModel)]="FilterShop"
+                      class="custom-input"
+                    />
+                  </nz-input-group>
+                </div>
+
+                <div nz-col nzSpan="1" nzJustify="center">
+                  <button nz-button nzType="primary" [nzSize]="size" style="
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 40%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      transition: all 0.3s ease;
+                      margin-left: 10px;
+                    " (click)="getShops()" class="refresh-btn">
+                    <i nz-icon nzType="sync" nzTheme="outline"></i>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <nz-table
+            [nzLoading]="loading"
+            #filterShops
+            [nzData]="shops"
+            nzTableLayout="fixed"
+            [nzPageSize]="6"
+            nzShowPagination
+            nzShowSizeChanger
+          >
+            <thead>
+              <tr>
+                <th>NIM</th>
+                <th>Dénomination</th>
+                <th>Adresse</th>
+                <th>Affecté</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let shop of filterShops.data; let i = index">
+                <td>{{ shop.nim }}</td>
+                <td>{{ shop.shopName }}</td>
+                <td>{{ shop.adress1 }}</td>
+                <td nzRight>
+                  <div class="action-containers" style="padding-left: 10px">
+                    <label
+                      nz-radio
+                      name="selectedShop"
+                      [ngModel]="shop.belongsTo"
+                      (ngModelChange)="onShopRadioSelect(shop)"
+                    ></label>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </nz-table>
+        </div>
+      </div>
+
+      <ng-template #footerTpButton>
+        <div style="float: right">
+          <button nz-button style="margin-right: 8px">Fermer</button>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</nz-drawer>
+
+<nz-modal [(nzVisible)]="isUserAddingMoalVisible" nzTitle="Nouvel utilisateur" nzOkText="Créer" nzCancelText="Annuler"
+  (nzOnCancel)="handleCancelUserModal()" nzWidth="50%" [nzFooter]="modalFooter">
+  <ng-container *nzModalContent>
+    <form nz-form [formGroup]="validateForm">
+      <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label [nzSpan]="6" nzRequired nzFor="nom" style="text-align: right; padding-right: 8px">
+          Nom
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input nz-input id="nom" formControlName="nom" placeholder="Nom" class="custom-input" />
+          <ng-template #nomErrorTpl let-control>
+            <span *ngIf="control.errors?.required">Le nom est requis</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label [nzSpan]="6" nzRequired nzFor="prenom" style="text-align: right; padding-right: 8px">
+          Prénom
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input nz-input id="prenom" formControlName="prenom" placeholder="Prenom" class="custom-input" />
+          <ng-template #prenomErrorTpl let-control>
+            <span *ngIf="control.errors?.required">Le prénom est requis</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item>
+
+      <!-- Email -->
+      <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label [nzSpan]="6" nzRequired nzFor="email" style="text-align: right; padding-right: 8px">
+          E-mail
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input nz-input formControlName="email" id="email" placeholder="exemple@email.com" class="custom-input" />
+          <ng-template #emailErrorTpl let-control>
+            <span *ngIf="control.errors?.required">L'email est requis</span>
+            <span *ngIf="control.errors?.email">Format d'email invalide</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item>
+
+      <!-- Mot de passe -->
+      <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label [nzSpan]="6" nzRequired nzFor="motDePasse" style="text-align: right; padding-right: 8px">
+          Mot de passe
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <nz-input-group [nzSuffix]="passwordSuffix" class="custom-input">
+            <input nz-input [type]="passwordVisible ? 'text' : 'password'" id="motDePasse" formControlName="motDePasse"
+              placeholder="Mot de passe" />
+          </nz-input-group>
+          <ng-template #passwordSuffix>
+            <span nz-icon [nzType]="passwordVisible ? 'eye-invisible' : 'eye'"
+              (click)="passwordVisible = !passwordVisible" style="cursor: pointer"></span>
+          </ng-template>
+
+          <ng-template #passwordErrorTpl let-control>
+            <span *ngIf="control.errors?.required">Le mot de passe est requis</span>
+            <span *ngIf="control.errors?.minlength">Minimum 6 caractères</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item>
+      <!-- <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label
+          [nzSpan]="6"
+          nzRequired
+          nzFor="password"
+          style="text-align: right; padding-right: 8px"
+        >
+          Mot de passe
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input
+            nz-input
+            type="password"
+            id="password"
+            formControlName="password"
+            placeholder="Mot de passe"
+            class="custom-input"
+          />
+          <ng-template #passwordErrorTpl let-control>
+            <span *ngIf="control.errors?.required"
+              >Le mot de passe est requis</span
+            >
+            <span *ngIf="control.errors?.minlength">Minimum 6 caractères</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item> -->
+
+      <!-- Confirmation mot de passe -->
+      <!-- <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label
+          [nzSpan]="6"
+          nzRequired
+          nzFor="checkPassword"
+          style="text-align: right; padding-right: 8px"
+        >
+          Confirmer le mot de passe
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input
+            nz-input
+            type="password"
+            formControlName="checkPassword"
+            id="checkPassword"
+            placeholder="Confirmer le mot de passe"
+            class="custom-input"
+          />
+          <ng-template #confirmPasswordErrorTpl let-control>
+            <span *ngIf="control.errors?.required"
+              >La confirmation est requise</span
+            >
+            <span *ngIf="control.errors?.confirm"
+              >Les mots de passe ne correspondent pas</span
+            >
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item> -->
+      <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label [nzSpan]="6" nzRequired nzFor="confirmeMotDePasse" style="text-align: right; padding-right: 8px">
+          Confirmer le mot de passe
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <nz-input-group [nzSuffix]="ConfirmpasswordSuffix" class="custom-input">
+            <input nz-input [type]="confirmPasswordVisible ? 'text' : 'password'" id="confirmeMotDePasse"
+              formControlName="confirmeMotDePasse" placeholder="Mot de passe" />
+          </nz-input-group>
+          <ng-template #ConfirmpasswordSuffix>
+            <span nz-icon [nzType]="confirmPasswordVisible ? 'eye-invisible' : 'eye'"
+              (click)="confirmPasswordVisible = !confirmPasswordVisible" style="cursor: pointer"></span>
+          </ng-template>
+
+          <ng-template #passwordErrorTpl let-control>
+            <span *ngIf="control.errors?.required">Veuillez confirmer le mot de passe</span>
+            <span *ngIf="control.errors?.minlength">Minimum 6 caractères</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item>
+      <!-- Pseudonyme -->
+      <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label [nzSpan]="6" nzRequired nzFor="nomUtilisateur" nzTooltipTitle="Renseignez un nom d'utilisateur ?"
+          style="text-align: right; padding-right: 8px">
+          Nom d'utilisateur
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input nz-input id="nomUtilisateur" formControlName="nomUtilisateur" placeholder="Nom d'utlisateur"
+            class="custom-input" />
+          <ng-template #nicknameErrorTpl let-control>
+            <span *ngIf="control.errors?.required">Le nom d'utilisateur est requis</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item>
+
+      <!-- Téléphone -->
+      <nz-form-item style="margin-bottom: 10px">
+        <nz-form-label [nzSpan]="6" nzRequired nzFor="codeDemandeur" nzTooltipTitle="Renseignez le code demandeur"
+          style="text-align: right; padding-right: 8px">
+          Code demandeur
+        </nz-form-label>
+        <nz-form-control [nzSpan]="14">
+          <input nz-input id="codeDemandeur" formControlName="codeDemandeur" placeholder="Code demandeur"
+            class="custom-input" />
+          <ng-template #nicknameErrorTpl let-control>
+            <span *ngIf="control.errors?.required">Le code demandeur est requis</span>
+          </ng-template>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label [nzSpan]="6" nzFor="role" nzRequired nzTooltipTitle="Renseignez le rôle"
+          style="text-align: right; padding-right: 8px">Rôle</nz-form-label>
+        <nz-form-control nzErrorTip="Vous devez selectionner le rôle" [nzSpan]="14">
+          <nz-select id="role" nzShowSearch nzAllowClear formControlName="role" nzPlaceHolder="Selectionnez le rôle"
+            class="custom-input">
+            <nz-option *ngFor="let item of roles" nzValue="{{ item }}" nzLabel="{{ item }}">
+              {{ item }}
+            </nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+
+  <ng-template #modalFooter>
+    <div nz-row nzJustify="end" nzAlign="middle">
+      <button nz-button nzType="default" nzSize="large">Annuler</button>
+      <button nz-button nzType="primary" nzSize="large" [nzLoading]="isSaving">
+        Enregistrer
+      </button>
+    </div>
+  </ng-template>
+</nz-modal>

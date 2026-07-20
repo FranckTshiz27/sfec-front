@@ -1,0 +1,182 @@
+.w-inp {
+  width: 100%;
+}
+
+.p-inp {
+  margin-right: 0px;
+}
+
+.p-button {
+  padding-top: 20px;
+}
+
+.border-left-from {
+  margin-left: 30px;
+  border-left: 1px solid rgb(219, 215, 215);
+  padding-left: 50px;
+  padding-right: 50px;
+}
+.space-align-block {
+  margin-bottom: 30px;
+}
+
+.sizeContenaire {
+  width: 250px;
+}
+
+.bold-p {
+  font-weight: bold;
+  font-size: 30px;
+  margin: 0 auto;
+
+  margin-bottom: 20px;
+}
+
+::ng-deep .ant-form-item-label {
+  text-align: left;
+  display: block;
+}
+::ng-deep .ant-select {
+  display: block;
+}
+::ng-deep .ant-form-item {
+  display: block;
+  margin-bottom: 0px;
+}
+
+.open-link_view_action {
+  width: 35px;
+  height: 35px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #1F4888;
+}
+
+.open-link_view_action:hover {
+  width: 36px;
+  height: 36px;
+  padding: 9px;
+  border-radius: 5px;
+  border: 1px solid #2b7ae2;
+}
+
+.contenaireBar {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Style pour les inputs avec fond */
+.custom-input {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+/* Quand l'input est en focus (clic dessus) */
+.custom-input:focus {
+  background-color: #ffffff;
+  border-color: #1F4888;
+  box-shadow: 0 0 0 2px rgba(31, 72, 136, 0.2);
+  outline: none;
+}
+
+/* Quand l'input a du texte */
+.custom-input:not(:placeholder-shown) {
+  background-color: #ffffff;
+}
+
+/* Style pour les inputs dans les input-groups */
+nz-input-group .custom-input {
+  border-left: none;
+}
+
+nz-input-group .ant-input-group-addon {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+nz-input-group:focus-within .ant-input-group-addon {
+  background-color: #ffffff;
+  border-color: #1F4888;
+}
+
+/* Animation douce pour tous les transitions */
+.ant-input,
+.ant-input-affix-wrapper {
+  transition: all 0.3s ease;
+}
+
+.open-link_view_action2 {
+  width: 28px;
+  height: 28px;
+  padding: 8px;
+  border-radius: 5px;
+  background: #1F4888 !important;
+  margin: 5px !important;
+  display: flex;
+  align-items: center a {
+    display: flex;
+    align-items: center;
+  }
+}
+.open-link_view_action2_inactive {
+  width: 28px;
+  height: 28px;
+  padding: 8px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #dde2e7 0%, #c5c8cf 100%) !important;
+  margin: 5px !important;
+  display: flex;
+  align-items: center a {
+    display: flex;
+    align-items: center;
+  }
+}
+.open-link_view_cancel {
+  width: 28px;
+  height: 28px;
+  padding: 8px;
+  border-radius: 5px;
+  background: #1F4888 !important;
+  margin: 5px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-items: center a {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.open-link_view_inactive_cancel {
+  width: 27px;
+  height: 27px;
+  padding: 8px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #dde2e7 0%, #c5c8cf 100%) !important;
+  background-color: red;
+  margin: 5px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-items: center a {
+    display: flex;
+    align-items: center;
+  }
+}
+.action-containers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.ant-table-row {
+  height: 30px;
+}
+.ant-table-tbody > tr > td {
+  padding: 3px;
+  font-size: 12px;
+  padding-left: 20px !important;
+}

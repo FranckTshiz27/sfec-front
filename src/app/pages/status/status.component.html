@@ -1,0 +1,295 @@
+<!-- <div nz-row>
+  <div nz-col nzFlex="1">
+    <div>
+      <div
+        class="contenaireBar"
+        style="margin-right: 30px"
+        style="
+          padding: 10px 24px;
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          background: #d7e3ff2e;
+          border-bottom: 0.5px solid #e8e8e826;
+          margin-bottom: 20px;
+          align-items: center;
+          box-shadow: 0 1px 3px rgba(131, 130, 130, 0.05);
+        "
+      > -->
+        <!-- <div nz-col nzSpan="24" nzJustify="center">
+          <div>
+            <div nz-col nzSpan="3">
+              <h4 style="color: #000; font-size: 15px">
+                {{ listOfData.length }} Codifications
+              </h4>
+            </div>
+          </div>
+          <div
+            nz-row
+            nzSpan="24"
+            nzJustify="center"
+            nzAlign="middle"
+            style="margin-bottom: 10px"
+          >
+            <div nz-col nzSpan="8">
+              <nz-input-group nzSearch>
+                <input
+                  type="text"
+                  nz-input
+                  placeholder="Rechercher une codification par son code Orass ou Apag ou son type!"
+                  [(ngModel)]="Filter"
+                  class="custom-input"
+                />
+              </nz-input-group>
+            </div>
+            <div nz-col nzSpan="1" nzJustify="center">
+              <button
+                nz-button
+                nzType="primary"
+                [nzSize]="size"
+                style="
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 40%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  transition: all 0.3s ease;
+                  margin-left: 10px;
+                "
+                (click)="getAll()"
+                class="refresh-btn"
+              > -->
+                <!-- <i nz-icon nzType="sync" nzTheme="outline"></i>
+              </button>
+            </div>
+            <div nz-col nzSpan="15">
+              <div nz-row nzJustify="end" nzSpan="24">
+                <button
+                  nz-button
+                  nzType="primary"
+                  nzSize="large"
+                  class="btn-new"
+                  (click)="showUserModal()"
+                >
+                  Nouvelle Codification
+                </button>
+              </div> -->
+            <!-- </div>
+          </div>
+        </div>
+      </div> -->
+
+      <!-- <nz-table
+        [nzLoading]="loading"
+        #filterTable
+        [nzData]="listOfData"
+        nzTableLayout="fixed"
+        [nzPageSize]="10"
+        nzShowPagination
+        nzShowSizeChanger -->
+      <!-- >
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Code</th>
+            <th>Déscription</th>
+            <th>Statut</th>
+            <th>Action</th>
+          </tr>
+        </thead> -->
+        <!-- <tbody>
+          <tr *ngFor="let data of filterTable.data; let i = index">
+            <td>{{ data.type }}</td>
+            <td>{{ data.code }}</td>
+            <td>{{ data.description }}</td>
+            <td>{{ data.etat }}</td>
+
+            <td nzRight style="padding-left: 30px">
+              <div class="action-containers">
+                <a
+                  class="open-link_view_action2"
+                  (click)="showEdtingModal(data)"
+                > -->
+                  <!-- <span
+                    nz-icon
+                    nzTheme="fill"
+                    nzType="edit"
+                    style="cursor: pointer; color: #fff"
+                  ></span>
+                </a> -->
+              <!-- </div>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+    </div>
+  </div> -->
+
+  <!-- <nz-modal
+    [(nzVisible)]="isUserAddingMoalVisible"
+    nzTitle="Nouvelle codification"
+    nzOkText="Créer"
+    nzCancelText="Annuler"
+    (nzOnCancel)="handleCancelUserModal()"
+    nzWidth="40%"
+    [nzFooter]="modalFooter"
+  >
+    <ng-container *nzModalContent>
+      <div nz-col>
+        <form
+          nz-form
+          [formGroup]="validateForm"
+          nz-space
+          nzAlign="start"
+          class="space-align-block"
+          #myform="ngForm"
+        > -->
+          <!-- <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="code"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Code
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez le code de la codification"
+            > -->
+              <!-- <input
+                nz-input
+                formControlName="code"
+                placeholder="Code de la codification"
+                name="code"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item nzJustify="center" style="margin-bottom: 10px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="description"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Déscription</nz-form-label
+            > -->
+            <!-- <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez la déscription"
+            >
+              <textarea
+                rows="4"
+                nz-input
+                formControlName="description"
+                placeholder="Desciption de la codification"
+                name="description"
+                class="custom-input"
+              ></textarea>
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px"> -->
+            <!-- <nz-form-label
+              [nzSpan]="24"
+              nzFor="statut"
+              nzRequired
+              style="margin-bottom: 5px"
+              >Statut
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez le statut de la codification"
+            > -->
+              <!-- <input
+                nz-input
+                formControlName="statut"
+                placeholder="Statut de la codification"
+                name="statut"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item nzJustify="center" style="margin-bottom: 5px">
+            <nz-form-label
+              [nzSpan]="24"
+              nzFor="correspondance"
+              nzRequired
+              style="margin-bottom: 5px"
+              >correspondance
+            </nz-form-label>
+            <nz-form-control
+              [nzSpan]="24"
+              nzHasFeedback
+              nzValidatingTip="Validation..."
+              nzErrorTip="Svp entrez les codes orass correspondants à cette codification"
+            >
+              <input
+                nz-input
+                formControlName="correspondance"
+                placeholder="codes oras correspondant à la codification. Séparez le code par ;"
+                name="correspondance"
+                class="custom-input"
+              />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item nzJustify="center">
+            <nz-form-label [nzSpan]="24" nzFor="type" nzRequired
+              >Type codification</nz-form-label
+            >
+            <nz-form-control
+              [nzSpan]="24"
+              nzErrorTip="Vous devez selectionner le type de codification"
+            >
+              <nz-select
+                id="type"
+                nzShowSearch
+                nzAllowClear
+                formControlName="type"
+                nzPlaceHolder="Selectionnez le type de codification"
+                class="custom-input"
+              >
+                <nz-option
+                  *ngFor="let item of types"
+                  nzValue="{{ item }}"
+                  nzLabel="{{ item }}"
+                > -->
+                  <!-- {{ item }}
+                </nz-option>
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        </form>
+      </div>
+    </ng-container> -->
+
+    <!-- <ng-template #modalFooter>
+      <div nz-row nzJustify="end" nzAlign="middle">
+        <nz-form-item nz-row class="register-area p-button">
+          <nz-form-control [nzSpan]="24" [nzOffset]="0">
+            <button
+              nz-button
+              nzType="primary"
+              (click)="saveOrUdate()"
+              name="Submit"
+              value="Login"
+              type="button"
+              [nzLoading]="isLoadingOne" -->
+            >
+              <!-- [disabled]="activeAction" -->
+              <!-- {{ !isEditing ? "Enregistrer" : "Modifier" }}
+            </button>
+            <button nz-button (click)="resetForm()" style="margin-left: 10px">
+              Annuler
+            </button>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </ng-template> -->
+  <!-- </nz-modal>
+</div> -->

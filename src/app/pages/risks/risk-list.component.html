@@ -1,0 +1,512 @@
+<div nz-row style="margin-top: 10px">
+  <div
+    class="contenaireBar"
+    style="
+      padding: 18px 24px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      background: #d7e3ff2e;
+      border-bottom: 0.5px solid #e8e8e826;
+      margin-bottom: 20px;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(131, 130, 130, 0.05);
+    "
+  >
+    <div nz-row nzJustify="center" nzAlign="middle" style="width: 100%">
+      <div nz-col nzFlex="0.6" style="align-items: center">
+        <div
+          nz-row
+          nzJustify="center"
+          nzAlign="middle"
+          style="width: 100%; padding-right: 150px"
+          *ngIf="risks != null && risks.length > 0"
+        >
+          <span
+            style="
+              font-size: 15px;
+              font-weight: 700;
+              color: #1F4888;
+              transform: perspective(500px) rotateX(10deg);
+              display: inline-block;
+            "
+          >
+            {{ risks.length }} véhicule{{ risks.length > 1 ? "s" : "" }}
+          </span>
+        </div>
+        <div nz-row style="width: 100%">
+          <div nz-col nzFlex="0.75">
+            <div nz-row style="width: 100%" nzJustify="end">
+              <div nz-col nzFlex="0.7" style="margin-right: 2px">
+                <input
+                  type="text"
+                  nz-input
+                  placeholder="Rechercher un véhicule par son numéro d'immatriculation"
+                  name="word_search"
+                  class="custom-input"
+                  [(ngModel)]="RiskFilterText"
+                  title="Rechercher un véhicule par son numéro d'immatriculation"
+                />
+              </div>
+              <div nz-col nzFlex="0.1">
+                <!-- <div nz-row style="width: 100%" nzJustify="center"> -->
+                <button
+                  nz-button
+                  nzType="primary"
+                  [nzSize]="size"
+                  style="
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 40%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s ease;
+                  "
+                  (click)="refresh()"
+                  class="refresh-btn"
+                >
+                  <i nz-icon nzType="sync" nzTheme="outline"></i>
+                </button>
+                <!-- </div> -->
+              </div>
+            </div>
+          </div>
+
+          <div nz-col nzFlex="0.25">
+            <div nz-row nzJustify="center" nzAlign="middle">
+              <button
+                nz-button
+                class="button-10"
+                [nzLoading]="!CanAsking"
+                [disabled]="!CanAsking"
+                (click)="sendCertificateRequest()"
+                title="Soumettre la demande"
+              >
+                <fa-icon [icon]="faIcon" class="icon"></fa-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<i class="fi fi-rr-arrow-small-left"></i>
+
+<nz-table
+  [nzLoading]="loading"
+  #filterTable
+  [nzData]="filteredRisks"
+  [nzPageSize]="10"
+  class="policies-table"
+  nzShowPagination
+  nzShowSizeChanger
+  [nzFrontPagination]="true"
+>
+  <thead class="customized-header">
+    <tr>
+      <th>Immatriculation</th>
+      <th>Nom souscripteur</th>
+      <th>Chassis</th>
+      <th>Nombre de place</th>
+      <th>Date première mise en circulation</th>
+      <th>Attestations</th>
+      <th>
+        <div class="action-containers">
+          <div class="checkbox-wrapper-30">
+            <span class="checkbox">
+              <input
+                type="checkbox"
+                [(ngModel)]="Checkall"
+                title="Cocher tous les véhicules"
+              />
+              <!-- *ngIf="isListValid()" -->
+              <input
+                type="checkbox"
+                title="Des véhiculés sans immatriculation ou ayant déjà un certificat trouvés dans cette liste "
+                (click)="showInvalidListErrorMessage($event)"
+                *ngIf="!isListValid()"
+              />
+              <svg>
+                <use xlink:href="#checkbox-30" class="checkbox"></use>
+              </svg>
+            </span>
+            <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+              <symbol id="checkbox-30" viewBox="0 0 22 22">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  d="M5.5,11.3L9,14.8L20.2,3.3l0,0c-0.5-1-1.5-1.8-2.7-1.8h-13c-1.7,0-3,1.3
+                  -3,3v13c0,1.7,1.3,3,3,3h13 c1.7,0,3-1.3,3-3v-13c0-0.4-0.1-0.8-0.3-1.2"
+                />
+              </symbol>
+            </svg>
+          </div>
+        </div>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let risk of filterTable.data">
+      <td>{{ risk.numeroImmatriculation }}</td>
+      <td>{{ risk.nomSouscripteur }}</td>
+      <td>{{ risk.numeroChassis }}</td>
+      <td [class.empty-cell]="!risk.nombrePlace">{{ risk.nombrePlace }}</td>
+      <td>{{ risk.datePremiereMec | date : "dd/MM/yyyy" }}</td>
+
+      <td>
+        <div class="action-containers">
+          <a
+            *ngIf="risk.demande != null && risk.demande.request.statut == '0'"
+            (click)="printForMultipleSelection(risk.demande, 'JAUN')"
+            class="open-link_view_action_jaun"
+            title="Imprimer ce certificat"
+          >
+            <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+          </a>
+
+          <a
+            *ngIf="risk.demande != null && risk.demande.request.statut == '0'"
+            (click)="printForMultipleSelection(risk.demande, 'BRUN')"
+            class="open-link_view_action_brun"
+            title="Imprimer ce certificat"
+          >
+            <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+          </a>
+
+          <a
+            *ngIf="risk.demande == null || risk.demande.request.statut != '0'"
+            class="open-link_view_action2_inactive"
+            title="Imprimer ce certificat"
+          >
+            <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+          </a>
+
+          <a
+            *ngIf="risk.demande == null || risk.demande.request.statut != '0'"
+            class="open-link_view_action2_inactive"
+            title="Imprimer ce certificat"
+          >
+            <fa-icon [icon]="faPrint" class="icon"></fa-icon>
+          </a>
+        </div>
+      </td>
+      <td>
+        <div class="action-containers">
+          <a
+            class="open-link_view_action2"
+            title="Voir plus de détails"
+            (click)="open(risk.id)"
+          >
+            <fa-icon [icon]="faInfo" class="icon"></fa-icon>
+          </a>
+
+          <div class="checkbox-wrapper-30">
+            <span class="checkbox">
+              <input
+                type="checkbox"
+                *ngIf="
+                  risk.numeroImmatriculation === 'VIDE' ||
+                  (risk.demande != null && risk.demande.request.statut == '0')
+                "
+                disabled
+              />
+
+              <input
+                type="checkbox"
+                [(ngModel)]="risk.isChecked"
+                *ngIf="
+                  (risk.numeroImmatriculation !== 'VIDE' &&
+                    risk.demande == null) ||
+                  (risk.demande != null && risk.demande.request.statut != '0')
+                "
+              />
+
+              <svg>
+                <use xlink:href="#checkbox-30" class="checkbox"></use>
+              </svg>
+            </span>
+            <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+              <symbol id="checkbox-30" viewBox="0 0 22 22">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  d="M5.5,11.3L9,14.8L20.2,3.3l0,0c-0.5-1-1.5-1.8-2.7-1.8h-13c-1.7,0-3,1.3-3,3v13c0,1.7,1.3,3,3,3h13 c1.7,0,3-1.3,3-3v-13c0-0.4-0.1-0.8-0.3-1.2"
+                />
+              </symbol>
+            </svg>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</nz-table>
+
+<nz-drawer
+  [nzBodyStyle]="{ overflow: 'auto' }"
+  [nzMaskClosable]="false"
+  [nzWidth]="750"
+  [nzVisible]="visible_view"
+  nzTitle="Informations du véhicule"
+  (nzOnClose)="closeDrawer()"
+>
+  <div *nzDrawerContent>
+    <nz-divider nzText="Informations générales du véhicule"></nz-divider>
+    <nz-descriptions nzTitle="" nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="ID">
+        {{ selectedRisk?.id || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Immatriculation">
+        {{ selectedRisk?.numeroImmatriculation || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Chassis">
+        {{ selectedRisk?.numeroChassis || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Genre véhicule">
+        {{ selectedRisk?.genreVehicule || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Type véhicule">
+        {{ selectedRisk?.typeVehicule || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Marque">
+        {{ selectedRisk?.marqueVehicule || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Modèle">
+        {{ selectedRisk?.modelVehicule || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Catégorie">
+        {{ selectedRisk?.categorieVehicule || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Usage">
+        {{ selectedRisk?.usageVehicule || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Source d'énergie">
+        {{ selectedRisk?.sourceEnergie || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Nombre de places">
+        {{ selectedRisk?.nombrePlace || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Numéro moteur">
+        {{ selectedRisk?.numeroMoteur || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Zone de circulation">
+        {{ selectedRisk?.zoneCirculation || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date première mise en circulation">
+        {{
+          selectedRisk?.datePremiereMec
+            ? (selectedRisk.datePremiereMec | date : "dd/MM/yyyy")
+            : "Non disponible"
+        }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Valeur neuve">
+        {{ selectedRisk?.valeurNeuve || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Valeur vénale">
+        {{ selectedRisk?.valeurVenale || "Non disponible" }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider nzText="Informations du souscripteur"></nz-divider>
+    <nz-descriptions nzTitle="" nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="Nom souscripteur">
+        {{ selectedRisk?.nomSouscripteur || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Type souscripteur">
+        {{ selectedRisk?.typeSouscripteur || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Email souscripteur">
+        {{ selectedRisk?.adresseMailSouscripteur || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Téléphone souscripteur">
+        {{ selectedRisk?.numeroTelephoneSouscripteur || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Boite postale souscripteur">
+        {{ selectedRisk?.boitePostaleSouscripteur || "Non disponible" }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider nzText="Informations de l'assuré"></nz-divider>
+    <nz-descriptions nzTitle="" nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="Type assuré">
+        {{ selectedRisk?.typeAssure || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Nom assuré">
+        {{ selectedRisk?.nomAssure || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Email assuré">
+        {{ selectedRisk?.adresseMailAssure || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Téléphone assuré">
+        {{ selectedRisk?.numeroTelephoneAssure || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Boite postale assuré">
+        {{ selectedRisk?.boitePostaleAssure || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Profession assuré">
+        {{ selectedRisk?.professionAssure || "Non disponible" }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider nzText="Informations de la police"></nz-divider>
+    <nz-descriptions nzTitle="" nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="Numéro police">
+        {{ selectedRisk?.numeroPolice || "1Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Code intermédiaire">
+        {{ selectedRisk?.codeint || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Numéro police">
+        {{ selectedRisk?.numpoli || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Numéro avenant">
+        {{ selectedRisk?.numave || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date souscription">
+        <!-- {{ selectedRisk?.dateSouscription| date : "dd/MM/yyyy" || "Non disponible" }}
+           -->
+        {{
+          selectedRisk?.dateSouscription
+            ? (selectedRisk.dateSouscription | date : "dd/MM/yyyy")
+            : "Non disponible"
+        }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date effet">
+        {{
+          selectedRisk?.dateEffet
+            ? (selectedRisk.dateEffet | date : "dd/MM/yyyy")
+            : "Non disponible"
+        }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date échéance">
+        {{
+          selectedRisk?.dateEcheance
+            ? (selectedRisk.dateEcheance | date : "dd/MM/yyyy")
+            : "Non disponible"
+        }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date demande édition">
+        <!-- {{ selectedRisk?.dateDemandeEdition || "Non disponible" }} -->
+        {{
+          selectedRisk?.dateDemandeEdition
+            ? (selectedRisk.dateDemandeEdition | date : "dd/MM/yyyy")
+            : "Non disponible"
+        }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Bureau enregistreur">
+        {{ selectedRisk?.bureauEnregistreur || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Type point vente">
+        {{ selectedRisk?.typePointVenteCompagnie || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Code point vente">
+        {{ selectedRisk?.codePointVenteCompagnie || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Dénomination point vente">
+        {{ selectedRisk?.denominationPointVente || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Code nature attestation">
+        {{ selectedRisk?.codeNatureAttestation || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Garantie">
+        {{ selectedRisk?.garantie || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Contrat">
+        {{ selectedRisk?.contrat || "Non disponible" }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider nzText="Informations financières"></nz-divider>
+    <nz-descriptions nzTitle="" nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="RC">
+        {{ selectedRisk?.rc || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Montant prime nette totale">
+        {{ selectedRisk?.montantPrimeNetteTotal || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Montant accessoires">
+        {{ selectedRisk?.montantAccessoires || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Montant autres garanties">
+        {{ selectedRisk?.montantAutresGaranties || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Montant taxes">
+        {{ selectedRisk?.montantTaxes || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Montant carte brune">
+        {{ selectedRisk?.montantCarteBrune || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="FGA">
+        {{ selectedRisk?.fga || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Montant prime TTC">
+        {{ selectedRisk?.montantPrimeTtc || "Non disponible" }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider nzText="Certificat et documents"></nz-divider>
+    <nz-descriptions nzTitle="" nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="Numéro carte brune physique">
+        {{ selectedRisk?.numeroCarteBrunePhysique || "Non disponible" }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Numéro RCCM">
+        {{ selectedRisk?.numeroRccm || "Non disponible" }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <div style="float: right; margin-top: 16px">
+      <button nz-button (click)="closeDrawer()">Fermer</button>
+    </div>
+  </div>
+</nz-drawer>
+
+<nz-modal
+  [(nzVisible)]="canShowInvalidRisks"
+  nzOkText="Ok"
+  nzCancelText="Cancel"
+  (nzOnOk)="handleOk()"
+  (nzOnCancel)="handleCancel()"
+  nzWidth="70%"
+>
+  <ng-container *nzModalContent>
+    <h1>
+      Des véhicules avec des informations incomplètes ont été trouvés. Veuillez
+      compléter ces informations et réessayer.
+    </h1>
+    <nz-table
+      [nzLoading]="loading"
+      #filterTable
+      [nzData]="invalidRisks"
+      [nzPageSize]="10"
+      class="policies-table"
+      nzShowPagination
+      nzShowSizeChanger
+      [nzFrontPagination]="true"
+    >
+      <thead class="customized-header">
+        <tr>
+          <th>N° ARCA</th>
+          <th>Nom assuré</th>
+          <th>Immatriculation</th>
+          <th>Code assuré</th>
+          <th>Avenant</th>
+          <th>Type</th>
+          <th>Chassis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let risk of filterTable.data">
+          <td>{{ risk.cle }}</td>
+          <td>{{ risk.assure }}</td>
+          <td>{{ risk.immatriculation }}</td>
+          <td>{{ risk.code_assure }}</td>
+          <td>{{ risk.numave }}</td>
+          <td>{{ risk.typeave }}</td>
+          <td>{{ risk.chassis }}</td>
+        </tr>
+      </tbody>
+    </nz-table>
+  </ng-container>
+</nz-modal>

@@ -1,0 +1,360 @@
+/* Style pour les inputs avec fond */
+.custom-input {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+/* Quand l'input est en focus (clic dessus) */
+.custom-input:focus {
+  background-color: #ffffff;
+  border-color: #1F4888;
+  box-shadow: 0 0 0 2px rgba(31, 72, 136, 0.2);
+  outline: none;
+}
+
+/* Quand l'input a du texte */
+.custom-input:not(:placeholder-shown) {
+  background-color: #ffffff;
+}
+
+/* Style pour les inputs dans les input-groups */
+nz-input-group .custom-input {
+  border-left: none;
+}
+
+nz-input-group .ant-input-group-addon {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+nz-input-group:focus-within .ant-input-group-addon {
+  background-color: #ffffff;
+  border-color: #1F4888;
+}
+
+/* Animation douce pour tous les transitions */
+.ant-input, .ant-input-affix-wrapper {
+  transition: all 0.3s ease;
+}
+
+
+::ng-deep .ant-form-item-label {
+  text-align: left;
+  display: block;
+}
+::ng-deep .ant-select {
+  display: block;
+}
+::ng-deep .ant-form-item {
+  display: block;
+  margin-bottom: 0px;
+}
+.button-10 {
+  display: flex !important;
+  // flex-direction: column !important;
+  align-items: center !important ;
+  justify-content: center;
+  padding: 3px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Roboto", sans-serif !important;
+  border-radius: 6px !important;
+  border: none;
+  color: #fff;
+  background: #1F4888 !important;
+  background-origin: border-box !important;
+  box-shadow: 0px 0.5px 1.5px rgba(31, 72, 136, 0.25),
+    inset 0px 0.8px 0px -0.25px rgba(255, 255, 255, 0.2) !important;
+  user-select: none !important;
+  -webkit-user-select: none;
+  touch-action: manipulation !important;
+  width: 50px !important;
+  margin: 0 10px !important;
+  align-items: center;
+  .icon {
+    color: #fff;
+    font-size: 15px !important;
+    // margin-right: 10px;
+  }
+}
+
+ .icon {
+  color: #fff;
+  font-size: 10px !important;
+}
+
+.open-link_view_action2 {
+  width: 28px;
+  height: 28px;
+  padding: 8px;
+  border-radius: 5px;
+  background: #1F4888 !important;
+  margin: 5px !important;
+  display: flex;
+  align-items: center a {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.user-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.user-hero-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 6px 22px rgba(15, 23, 42, 0.06);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.user-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.user-hero-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(31, 72, 136, 0.12);
+  color: #1F4888;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 1px solid #1F4888;
+}
+
+.user-hero-texts h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #111827;
+}
+
+.user-hero-texts p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1F4888;
+  display: inline-block;
+}
+
+.user-content-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.user-search-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.user-search-wrap {
+  width: 100%;
+}
+
+:host ::ng-deep .user-search-input {
+  font-size: 13px;
+  color: #374151;
+  background: transparent !important;
+}
+
+:host ::ng-deep .user-search-input::placeholder {
+  color: #9ca3af;
+}
+
+:host ::ng-deep .user-search-wrap .ant-input-affix-wrapper {
+  min-height: 42px;
+  border-radius: 8px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  padding: 0 12px !important;
+}
+
+:host ::ng-deep .user-search-wrap .ant-input-affix-wrapper:hover {
+  border-color: #cbd5e1 !important;
+}
+
+:host ::ng-deep .user-search-wrap .ant-input-affix-wrapper-focused {
+  border-color: #94a3b8 !important;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.15) !important;
+}
+
+:host ::ng-deep .user-search-wrap .ant-input-prefix {
+  margin-right: 8px;
+  color: #9ca3af;
+  font-size: 16px;
+}
+
+.user-reset-btn {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 8px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb !important;
+  color: #6b7280;
+  background: #ffffff;
+}
+
+.user-reset-btn:hover {
+  border-color: #cbd5e1 !important;
+  color: #374151;
+  background: #f8fafc;
+}
+
+:host ::ng-deep .user-list-table .ant-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+:host ::ng-deep .user-list-table .ant-table-thead > tr > th {
+  background: #f8fafc !important;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+:host ::ng-deep .user-list-table .ant-table-tbody > tr > td {
+  font-size: 13px;
+  color: #1f2937;
+  padding: 14px 12px !important;
+  border-bottom: 1px solid #eef2f7 !important;
+}
+
+:host ::ng-deep .user-list-table .ant-table-tbody > tr:hover > td {
+  background: #f8fbff !important;
+}
+
+.user-code-cell {
+  color: #1F4888;
+  font-weight: 600;
+}
+
+.user-actions-cell {
+  text-align: center;
+  width: 110px;
+}
+
+.user-action-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db !important;
+  color: #4b5563;
+}
+
+.user-action-btn:hover {
+  border-color: #1F4888 !important;
+  color: #1F4888;
+  background: rgba(31, 72, 136, 0.12);
+}
+
+.drawer-user-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.drawer-user-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.global-save-btn.ant-btn-primary {
+  min-width: 260px;
+  height: 42px;
+  border: none !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #1F4888 0%, #295da8 100%) !important;
+  box-shadow: 0 8px 20px rgba(31, 72, 136, 0.24) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.global-save-btn.ant-btn-primary:hover,
+.global-save-btn.ant-btn-primary:focus {
+  background: linear-gradient(135deg, #173a72 0%, #224f8f 100%) !important;
+  box-shadow: 0 10px 24px rgba(23, 58, 114, 0.3) !important;
+}
+
+.global-save-icon {
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .drawer-user-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .global-save-btn.ant-btn-primary {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+:host ::ng-deep .user-list-table .ant-pagination {
+  margin: 12px 8px 4px 8px;
+}
+
+:host ::ng-deep .user-list-table .ant-pagination-item {
+  border-radius: 8px;
+}
+
+:host ::ng-deep .user-list-table .ant-pagination-item-active {
+  border-color: #1F4888;
+  background: rgba(31, 72, 136, 0.12);
+}
+
+@media (max-width: 992px) {
+  .user-search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .user-reset-btn {
+    width: 100%;
+  }
+}

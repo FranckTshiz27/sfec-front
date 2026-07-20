@@ -1,0 +1,726 @@
+<div class="tx-page">
+  <div class="tx-page-header">
+    <div class="tx-page-title-wrap">
+      <div class="tx-page-title-icon">
+        <i nz-icon nzType="file-text"></i>
+      </div>
+      <div>
+        <h2>Historique des opérations EDEF/DGI</h2>
+        <p>Consultez l'historique des factures envoyées à la DGI</p>
+      </div>
+    </div>
+    <div class="tx-page-actions">
+      <button nz-button nzType="default">
+        <i nz-icon nzType="download"></i>
+        Exporter
+      </button>
+      <button nz-button nzType="primary">
+        <i nz-icon nzType="plus"></i>
+        Nouvelle facture
+      </button>
+    </div>
+  </div>
+
+  <div class="tx-layout">
+    <aside class="tx-filters-card">
+      <div class="tx-filters-head">
+        <h3>Filtres</h3>
+        <button nz-button nzType="link" (click)="resetTransactionFilters()">
+          Réinitialiser
+        </button>
+      </div>
+
+      <div class="tx-filter-group">
+        <label>Recherche globale</label>
+        <nz-input-group [nzPrefix]="searchPrefixTpl">
+          <input
+            nz-input
+            [(ngModel)]="globalSearch"
+            [ngModelOptions]="{ standalone: true }"
+            class="tx-search-input"
+            placeholder="Client, référence, facture, code..."
+          />
+        </nz-input-group>
+      </div>
+
+      <div class="tx-filter-group">
+        <label>Période</label>
+        <nz-range-picker
+          [(ngModel)]="dateArray"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="onChange($event)"
+          class="tx-filter-range tx-period-input"
+          [nzAllowClear]="true"
+        ></nz-range-picker>
+      </div>
+
+      <div class="tx-filter-group">
+        <label>Statut</label>
+        <label nz-checkbox [(ngModel)]="statusFilters.success" [ngModelOptions]="{ standalone: true }">Succès</label>
+        <label nz-checkbox [(ngModel)]="statusFilters.error" [ngModelOptions]="{ standalone: true }">Erreur</label>
+        <label nz-checkbox [(ngModel)]="statusFilters.pending" [ngModelOptions]="{ standalone: true }">Non validé</label>
+      </div>
+
+      <button nz-button nzType="primary" class="tx-apply-btn" (click)="getTransactions()">
+        Actualiser
+      </button>
+    </aside>
+
+    <section class="tx-main-card">
+      <div class="tx-stats-grid">
+        <article class="tx-stat-card tx-stat-card-blue">
+          <div class="tx-stat-icon tx-stat-blue"><i nz-icon nzType="file-text"></i></div>
+          <div>
+            <div class="tx-stat-value">{{ totalOperations }}</div>
+            <div class="tx-stat-label">Total opérations</div>
+          </div>
+        </article>
+        <article class="tx-stat-card tx-stat-card-green">
+          <div class="tx-stat-icon tx-stat-green"><i nz-icon nzType="check-circle"></i></div>
+          <div>
+            <div class="tx-stat-value tx-text-green">{{ successCount }}</div>
+            <div class="tx-stat-label">Succès ({{ successRate }}%)</div>
+          </div>
+        </article>
+        <article class="tx-stat-card tx-stat-card-red">
+          <div class="tx-stat-icon tx-stat-red"><i nz-icon nzType="close-circle"></i></div>
+          <div>
+            <div class="tx-stat-value tx-text-red">{{ errorCount }}</div>
+            <div class="tx-stat-label">Erreurs ({{ errorRate }}%)</div>
+          </div>
+        </article>
+      </div>
+
+      <nz-table
+        [nzLoading]="loading"
+        #filterTable
+        [nzData]="filteredTransactions"
+        [nzPageSize]="6"
+        nzShowPagination
+        nzShowSizeChanger
+        [nzFrontPagination]="true"
+        class="tx-table"
+      >
+        <thead>
+          <tr>
+            <th>Référence métier</th>
+            <th>N° Facture ERP</th>
+            <th>Client</th>
+            <th>Type</th>
+            <th>Taux</th>
+            <th>Montant TTC</th>
+            <th>Statut DGI</th>
+            <th>Date / Heure</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let transaction of filterTable.data; let i = index">
+            <td class="tx-ref">{{ transaction.cle }}</td>
+            <td>{{ transaction.rn }}</td>
+            <td>{{ transaction.client.name || '-' }}</td>
+            <td>
+              <span class="tx-type-chip" [ngClass]="'type-' + (transaction.type || '').toLowerCase()">
+                {{ transaction.type }}
+              </span>
+            </td>
+            <td>
+              <div>{{ transaction.exchangeRate | number : '1.2-4' }}</div>
+              <small>
+                {{
+                  transaction.exchangeRateEffectiveDate
+                    ? (transaction.exchangeRateEffectiveDate | date : 'dd/MM/yyyy HH:mm:ss')
+                    : '-'
+                }}
+              </small>
+            </td>
+            <td>{{ transaction.prime | number : '1.2-2' }} CDF</td>
+            <td>
+              <span class="tx-status-chip" [ngClass]="'status-' + getStatusKey(transaction.status)">
+                <i
+                  nz-icon
+                  [nzType]="
+                    getStatusKey(transaction.status) === 'success'
+                      ? 'check-circle'
+                      : getStatusKey(transaction.status) === 'error'
+                      ? 'close-circle'
+                      : getStatusKey(transaction.status) === 'pending'
+                      ? 'clock-circle'
+                      : 'minus-circle'
+                  "
+                ></i>
+                {{ getStatusLabel(transaction.status) }}
+              </span>
+            </td>
+            <td>
+              <div>{{ transaction.createdAt | date : 'dd/MM/yyyy' }}</div>
+              <small>{{ transaction.createdAt | date : 'HH:mm:ss' }}</small>
+            </td>
+            <td>
+              <div class="tx-actions">
+                <button nz-button nzType="default" class="tx-action-btn" (click)="moreInformations(transaction)" title="Voir détails">
+                  <i nz-icon nzType="eye"></i>
+                </button>
+                <button
+                  nz-button
+                  nzType="default"
+                  class="tx-action-btn"
+                  *ngIf="transaction.status == '1'"
+                  (click)="printDGIInvoice(transaction)"
+                  title="Télécharger"
+                >
+                  <i nz-icon nzType="download"></i>
+                </button>
+                <button nz-button nzType="default" class="tx-action-btn" *ngIf="transaction.status != '1'" disabled title="Indisponible">
+                  <i nz-icon nzType="sync"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+    </section>
+  </div>
+</div>
+
+<ng-template #searchPrefixTpl>
+  <i nz-icon nzType="search"></i>
+</ng-template>
+
+<nz-drawer
+  [nzBodyStyle]="{ overflow: 'auto' }"
+  [nzMaskClosable]="false"
+  [nzWidth]="1020"
+  [nzVisible]="visible_view"
+  nzTitle=""
+  (nzOnClose)="closeView()"
+>
+  <div *nzDrawerContent>
+    <div class="tx-drawer-hero">
+      <div class="tx-drawer-hero-title">
+        <h3>{{ selectedTransaction?.customer || selectedTransaction?.client?.name || '-' }}</h3>
+        <p>
+          {{ selectedTransaction?.typeFacture || selectedTransaction?.type || '-' }}
+          · {{ selectedTransaction?.rn || '-' }}
+        </p>
+      </div>
+      <span class="tx-status-chip" [ngClass]="'status-' + getStatusKey(selectedTransaction?.status)">
+        <i
+          nz-icon
+          [nzType]="
+            getStatusKey(selectedTransaction?.status) === 'success'
+              ? 'check-circle'
+              : getStatusKey(selectedTransaction?.status) === 'error'
+              ? 'close-circle'
+              : getStatusKey(selectedTransaction?.status) === 'pending'
+              ? 'clock-circle'
+              : 'minus-circle'
+          "
+        ></i>
+        {{ getStatusLabel(selectedTransaction?.status) }}
+      </span>
+    </div>
+
+    <nz-divider nzText="Informations générales"></nz-divider>
+    <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+      <nz-descriptions-item nzTitle="ID requête">
+        {{ selectedTransaction?.id || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Clé métier">
+        {{ selectedTransaction?.cle || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Type facture">
+        {{ selectedTransaction?.typeFacture || selectedTransaction?.type || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Client">
+        {{ selectedTransaction?.customer || selectedTransaction?.client?.name || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Point de vente">
+        {{ selectedTransaction?.branch || selectedTransaction?.shop?.shopName || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Société">
+        {{ selectedTransaction?.company || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Statut requête">
+        {{ selectedTransaction?.requestStatus || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Créée le">
+        {{ selectedTransaction?.createdAt | date : 'dd/MM/yyyy HH:mm:ss' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Modifiée le">
+        {{ selectedTransaction?.updatedAt | date : 'dd/MM/yyyy HH:mm:ss' }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider
+      *ngIf="
+        selectedTransaction?.messageContent?.codeDEFDGI ||
+        selectedTransaction?.messageContent?.counters ||
+        selectedTransaction?.messageContent?.nim ||
+        selectedTransaction?.messageContent?.dateTime ||
+        selectedTransaction?.messageContent?.qrCode
+      "
+      nzText="Message DGI"
+    ></nz-divider>
+    <nz-descriptions
+      *ngIf="
+        selectedTransaction?.messageContent?.codeDEFDGI ||
+        selectedTransaction?.messageContent?.counters ||
+        selectedTransaction?.messageContent?.nim ||
+        selectedTransaction?.messageContent?.dateTime ||
+        selectedTransaction?.messageContent?.qrCode
+      "
+      nzSize="small"
+      nzBordered
+      nzLayout="vertical"
+    >
+      <nz-descriptions-item nzTitle="Code DEF/DGI">
+        {{ selectedTransaction?.messageContent?.codeDEFDGI || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Compteurs">
+        {{ selectedTransaction?.messageContent?.counters || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="NIM">
+        {{ selectedTransaction?.messageContent?.nim || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date / Heure">
+        {{ selectedTransaction?.messageContent?.dateTime || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="QR Code" [nzSpan]="3">
+        <span class="tx-qr-value">{{ selectedTransaction?.messageContent?.qrCode || '-' }}</span>
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider
+      *ngIf="selectedTransaction?.dgiInvoicePayload"
+      nzText="Payload DGI"
+    ></nz-divider>
+    <nz-descriptions
+      *ngIf="selectedTransaction?.dgiInvoicePayload"
+      nzSize="small"
+      nzBordered
+      nzLayout="vertical"
+    >
+      <nz-descriptions-item nzTitle="NIF">
+        {{ selectedTransaction?.dgiInvoicePayload?.nif || selectedTransaction?.nif || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="RN">
+        {{ selectedTransaction?.dgiInvoicePayload?.rn || selectedTransaction?.rn || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Mode">
+        {{ selectedTransaction?.dgiInvoicePayload?.mode || selectedTransaction?.mode || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="ISF">
+        {{ selectedTransaction?.dgiInvoicePayload?.isf || selectedTransaction?.isf || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Devise">
+        {{ selectedTransaction?.dgiInvoicePayload?.curCode || selectedTransaction?.currencyCode || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date devise">
+        {{ selectedTransaction?.dgiInvoicePayload?.curDate || selectedTransaction?.currencyDate || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Taux devise">
+        {{ selectedTransaction?.dgiInvoicePayload?.curRate || selectedTransaction?.currencyRate || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Total">
+        {{ selectedTransaction?.dgiInvoicePayload?.totals?.total || selectedTransaction?.prime || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="TVA Totale">
+        {{ selectedTransaction?.dgiInvoicePayload?.totals?.vtotal || '-' }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <nz-divider
+      *ngIf="selectedTransaction?.frappeFinalizedSalesInvoice"
+      nzText="Facture Frappe finalisée"
+    ></nz-divider>
+    <nz-descriptions
+      *ngIf="selectedTransaction?.frappeFinalizedSalesInvoice"
+      nzSize="small"
+      nzBordered
+      nzLayout="vertical"
+    >
+      <nz-descriptions-item nzTitle="Numéro facture">
+        {{ selectedTransaction?.frappeFinalizedSalesInvoice?.name || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Statut">
+        {{ selectedTransaction?.frappeFinalizedSalesInvoice?.status || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Date facturation">
+        {{ selectedTransaction?.frappeFinalizedSalesInvoice?.posting_date || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Net total">
+        {{ selectedTransaction?.frappeFinalizedSalesInvoice?.net_total || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Total taxes">
+        {{ selectedTransaction?.frappeFinalizedSalesInvoice?.total_taxes_and_charges || '-' }}
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Grand total">
+        {{ selectedTransaction?.frappeFinalizedSalesInvoice?.grand_total || '-' }}
+      </nz-descriptions-item>
+    </nz-descriptions>
+
+    <!-- Section : Items de la facture -->
+    <nz-divider
+      *ngIf="selectedTransaction?.items?.length"
+      nzText="Items de la facture"
+    ></nz-divider>
+    <nz-table
+      *ngIf="selectedTransaction?.items?.length"
+      [nzData]="selectedTransaction?.items!"
+      nzSize="small"
+      nzBordered
+    >
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Description</th>
+          <th>Quantité</th>
+          <th>Original Price</th>
+          <th>Price</th>
+          <th>Taxe Group</th>
+          <th>Taxe specific amount</th>
+          <th>Taxe specific valuee</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of selectedTransaction?.items">
+          <td>{{ item.code }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>
+            {{
+              item.originalPrice
+                | currency : "USD" : "symbol-narrow" : "1.2-2" : "fr"
+            }}
+          </td>
+          <td>
+            {{
+              item.price | currency : "USD" : "symbol-narrow" : "1.2-2" : "fr"
+            }}
+          </td>
+          <td>{{ item.taxGroup }}</td>
+          <td>{{ item.taxSpecificAmount }}</td>
+          <td>
+            {{
+              item.taxSpecificValue
+                | currency : "USD" : "symbol-narrow" : "1.2-2" : "fr"
+            }}
+          </td>
+        </tr>
+      </tbody>
+    </nz-table>
+
+    <!-- Section : Paiements -->
+    <nz-divider *ngIf="selectedTransaction?.payments?.length" nzText="Paiements"></nz-divider>
+    <nz-table
+      *ngIf="selectedTransaction?.payments?.length"
+      [nzData]="selectedTransaction?.payments!"
+      nzSize="small"
+      nzBordered
+    >
+      <thead>
+        <tr>
+          <th>Mode</th>
+          <th>Montant</th>
+          <th>Devise</th>
+          <th>Taux</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let payment of selectedTransaction?.payments">
+          <td>{{ payment.name }}</td>
+          <td>
+            {{
+              payment.amount
+                | currency : "USD" : "symbol-narrow" : "1.2-2" : "fr"
+            }}
+          </td>
+          <td>{{ payment.currencyCode }}</td>
+          <td>{{ payment.currencyRate }}</td>
+          <td>{{ payment.createdAt | date : "dd/MM/yyyy HH:mm" }}</td>
+        </tr>
+      </tbody>
+    </nz-table>
+
+    <!-- <nz-divider nzText="Réponses API"></nz-divider> -->
+    <nz-collapse>
+      <!-- Réponse de facturation -->
+      <nz-divider nzText="Réponse de facturation"></nz-divider>
+      <nz-collapse-panel
+        *ngIf="selectedTransaction?.invoiceResponseData"
+        nzHeader="Réponse de facturation"
+      >
+        <nz-collapse>
+          <!-- Section Taxes (t) -->
+          <nz-collapse-panel nzHeader="Taxes (t)">
+            <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+              <nz-descriptions-item nzTitle="TA">
+                {{ selectedTransaction?.invoiceResponseData?.ta }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TB">
+                {{ selectedTransaction?.invoiceResponseData?.tb }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TC">
+                {{ selectedTransaction?.invoiceResponseData?.tc }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TD">
+                {{ selectedTransaction?.invoiceResponseData?.td }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TE">
+                {{ selectedTransaction?.invoiceResponseData?.te }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TF">
+                {{ selectedTransaction?.invoiceResponseData?.tf }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TG">
+                {{ selectedTransaction?.invoiceResponseData?.tg }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TH">
+                {{ selectedTransaction?.invoiceResponseData?.th }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TI">
+                {{ selectedTransaction?.invoiceResponseData?.ti }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TJ">
+                {{ selectedTransaction?.invoiceResponseData?.tj }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TK">
+                {{ selectedTransaction?.invoiceResponseData?.tk }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TL">
+                {{ selectedTransaction?.invoiceResponseData?.tl }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TM">
+                {{ selectedTransaction?.invoiceResponseData?.tm }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TN">
+                {{ selectedTransaction?.invoiceResponseData?.tn }}
+              </nz-descriptions-item>
+            </nz-descriptions>
+          </nz-collapse-panel>
+
+          <!-- Section Taxes étendues (ta) -->
+          <nz-collapse-panel nzHeader="Taxes étendues (ta)">
+            <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+              <nz-descriptions-item nzTitle="TAA">
+                {{ selectedTransaction?.invoiceResponseData?.taa }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAB">
+                {{ selectedTransaction?.invoiceResponseData?.tab }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAC">
+                {{ selectedTransaction?.invoiceResponseData?.tac }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAD">
+                {{ selectedTransaction?.invoiceResponseData?.tad }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAE">
+                {{ selectedTransaction?.invoiceResponseData?.tae }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAF">
+                {{ selectedTransaction?.invoiceResponseData?.taf }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAG">
+                {{ selectedTransaction?.invoiceResponseData?.tag }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAH">
+                {{ selectedTransaction?.invoiceResponseData?.tah }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAI">
+                {{ selectedTransaction?.invoiceResponseData?.tai }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAJ">
+                {{ selectedTransaction?.invoiceResponseData?.taj }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAK">
+                {{ selectedTransaction?.invoiceResponseData?.tak }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAL">
+                {{ selectedTransaction?.invoiceResponseData?.tal }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAM">
+                {{ selectedTransaction?.invoiceResponseData?.tam }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="TAN">
+                {{ selectedTransaction?.invoiceResponseData?.tan }}
+              </nz-descriptions-item>
+            </nz-descriptions>
+          </nz-collapse-panel>
+
+          <!-- Section Hors Taxes (ha) -->
+          <nz-collapse-panel nzHeader="Hors Taxes (ha)">
+            <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+              <nz-descriptions-item nzTitle="HAA">
+                {{ selectedTransaction?.invoiceResponseData?.haa }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAB">
+                {{ selectedTransaction?.invoiceResponseData?.hab }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAC">
+                {{ selectedTransaction?.invoiceResponseData?.hac }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAD">
+                {{ selectedTransaction?.invoiceResponseData?.had }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAE">
+                {{ selectedTransaction?.invoiceResponseData?.hae }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAF">
+                {{ selectedTransaction?.invoiceResponseData?.haf }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAG">
+                {{ selectedTransaction?.invoiceResponseData?.hag }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAH">
+                {{ selectedTransaction?.invoiceResponseData?.hah }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAI">
+                {{ selectedTransaction?.invoiceResponseData?.hai }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAJ">
+                {{ selectedTransaction?.invoiceResponseData?.haj }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAK">
+                {{ selectedTransaction?.invoiceResponseData?.hak }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAL">
+                {{ selectedTransaction?.invoiceResponseData?.hal }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAM">
+                {{ selectedTransaction?.invoiceResponseData?.ham }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="HAN">
+                {{ selectedTransaction?.invoiceResponseData?.han }}
+              </nz-descriptions-item>
+            </nz-descriptions>
+          </nz-collapse-panel>
+
+          <!-- Section Valeurs (va) -->
+          <nz-collapse-panel nzHeader="Valeurs (va)">
+            <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+              <nz-descriptions-item nzTitle="VAA">
+                {{ selectedTransaction?.invoiceResponseData?.vaa }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAB">
+                {{ selectedTransaction?.invoiceResponseData?.vab }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAC">
+                {{ selectedTransaction?.invoiceResponseData?.vac }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAD">
+                {{ selectedTransaction?.invoiceResponseData?.vad }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAE">
+                {{ selectedTransaction?.invoiceResponseData?.vae }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAF">
+                {{ selectedTransaction?.invoiceResponseData?.vaf }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAG">
+                {{ selectedTransaction?.invoiceResponseData?.vag }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAH">
+                {{ selectedTransaction?.invoiceResponseData?.vah }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAI">
+                {{ selectedTransaction?.invoiceResponseData?.vai }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAJ">
+                {{ selectedTransaction?.invoiceResponseData?.vaj }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAK">
+                {{ selectedTransaction?.invoiceResponseData?.vak }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAL">
+                {{ selectedTransaction?.invoiceResponseData?.val }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAM">
+                {{ selectedTransaction?.invoiceResponseData?.vam }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VAN">
+                {{ selectedTransaction?.invoiceResponseData?.van }}
+              </nz-descriptions-item>
+            </nz-descriptions>
+          </nz-collapse-panel>
+
+          <!-- Section Totaux -->
+          <nz-collapse-panel nzHeader="Totaux">
+            <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+              <nz-descriptions-item nzTitle="TS">
+                {{ selectedTransaction?.invoiceResponseData?.ts }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="Total">
+                {{ selectedTransaction?.invoiceResponseData?.total }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="Total Courant">
+                {{ selectedTransaction?.invoiceResponseData?.curTotal }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="VTotal">
+                {{ selectedTransaction?.invoiceResponseData?.vtotal }}
+              </nz-descriptions-item>
+            </nz-descriptions>
+          </nz-collapse-panel>
+
+          <!-- Section Erreurs -->
+          <nz-collapse-panel nzHeader="Erreurs">
+            <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+              <nz-descriptions-item nzTitle="Code Erreur">
+                {{ selectedTransaction?.invoiceResponseData?.errorCode }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="Description Erreur">
+                {{ selectedTransaction?.invoiceResponseData?.errorDesc }}
+              </nz-descriptions-item>
+              <nz-descriptions-item nzTitle="UID">
+                {{ selectedTransaction?.invoiceResponseData?.uid }}
+              </nz-descriptions-item>
+            </nz-descriptions>
+          </nz-collapse-panel>
+        </nz-collapse>
+      </nz-collapse-panel>
+
+      <!-- Réponse de finalisation -->
+      <nz-divider nzText="Réponse de finalisation"></nz-divider>
+      <nz-collapse-panel
+        *ngIf="selectedTransaction?.finalizeInvoiceResponseData"
+        nzHeader="Réponse de finalisation"
+      >
+        <nz-descriptions nzSize="small" nzBordered nzLayout="vertical">
+          <nz-descriptions-item nzTitle="code DEFDGI">
+            {{ selectedTransaction?.finalizeInvoiceResponseData?.codeDEFDGI }}
+          </nz-descriptions-item>
+          <nz-descriptions-item nzTitle="counters">
+            {{ selectedTransaction?.finalizeInvoiceResponseData?.counters }}
+          </nz-descriptions-item>
+          <nz-descriptions-item nzTitle="dateTime">
+            {{
+              selectedTransaction?.finalizeInvoiceResponseData?.dateTime
+                | date : "dd/MM/yyyy HH:mm"
+            }}
+          </nz-descriptions-item>
+
+          <nz-descriptions-item nzTitle="ID">
+            {{ selectedTransaction?.finalizeInvoiceResponseData?.id }}
+          </nz-descriptions-item>
+
+          <nz-descriptions-item nzTitle="NIM">
+            {{ selectedTransaction?.finalizeInvoiceResponseData?.nim }}
+          </nz-descriptions-item>
+
+          <nz-descriptions-item nzTitle="qrCode">
+            {{ selectedTransaction?.finalizeInvoiceResponseData?.qrCode }}
+          </nz-descriptions-item>
+        </nz-descriptions>
+      </nz-collapse-panel>
+    </nz-collapse>
+  </div>
+
+  <ng-template #footerTpButton>
+    <div style="float: right">
+      <button nz-button style="margin-right: 8px" (click)="closeView()">
+        Fermer
+      </button>
+    </div>
+  </ng-template>
+</nz-drawer>

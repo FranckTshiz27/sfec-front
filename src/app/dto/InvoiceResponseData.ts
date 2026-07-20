@@ -1,0 +1,70 @@
+export interface InvoiceResponseData {
+  id: string; // UUID devient string
+  uid: string;
+  ta: number;
+  tb: number;
+  tc: number;
+  td: number;
+  te: number;
+  tf: number;
+  tg: number;
+  th: number;
+  ti: number;
+  tj: number;
+  tk: number;
+  tl: number;
+  tm: number;
+  tn: number;
+  taa: number;
+  tab: number;
+  tac: number;
+  tad: number;
+  tae: number;
+  taf: number;
+  tag: number;
+  tah: number;
+  tai: number;
+  taj: number;
+  tak: number;
+  tal: number;
+  tam: number;
+  tan: number;
+  haa: number;
+  hab: number;
+  hac: number;
+  had: number;
+  hae: number;
+  haf: number;
+  hag: number;
+  hah: number;
+  hai: number;
+  haj: number;
+  hak: number;
+  hal: number;
+  ham: number;
+  han: number;
+  vaa: number;
+  vab: number;
+  vac: number;
+  vad: number;
+  vae: number;
+  vaf: number;
+  vag: number;
+  vah: number;
+  vai: number;
+  vaj: number;
+  vak: number;
+  val: number;
+  vam: number;
+  van: number;
+  ts: number;
+  total: number;
+  curTotal: number;
+  vtotal: number;
+  errorCode: string;
+  errorDesc: string;
+  // La propriété 'invoice' est omise car annotée avec @JsonIgnore
+  // Si vous en avez besoin côté front, vous pouvez l'ajouter comme optionnelle :
+  // invoice?: Invoice;
+}
+
