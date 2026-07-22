@@ -5,6 +5,7 @@ import { Observable, timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Invoice } from '../dto/Invoice';
 import { PeriodeDto } from '../dto/PeriodeDto';
+import { SfecInvoiceResponse } from '../dto/SfecInvoiceResponse';
 
 @Injectable({
   providedIn: 'root',
@@ -26,8 +27,8 @@ export class InvoiceService {
     );
   }
 
-  getTransactions(periodeDto: PeriodeDto): Observable<any> {
-    return this.http.post<any>(
+  getTransactions(periodeDto: PeriodeDto): Observable<SfecInvoiceResponse[]> {
+    return this.http.post<SfecInvoiceResponse[]>(
       `${environment.API.URL_BASE}${environment.API.SUB_RESSOURCE.INVOICE}${environment.API.V1.GET_DGI_INVOICE}`,
       periodeDto
     );

@@ -25,11 +25,15 @@ import autoTable from 'jspdf-autotable';
 import { finalize } from 'rxjs/operators';
 import { UtilService } from 'src/app/utils/utils.service';
 import {
+  decodeQrPayloadUrlFromDataUrl,
   downloadDataUrl,
+  extractQrCodeUrl,
+  isOpenableHttpUrl,
   normalizeQrCodeRaw,
   QR_CODE_PREVIEW_WIDTH,
   QR_CODE_TABLE_WIDTH,
   renderQrCodeImage,
+  toEmbeddedImageDataUrl,
 } from 'src/app/utils/qr-code.util';
 
 
@@ -39,7 +43,7 @@ import {
   styleUrls: ['./invoice-list.component.scss'],
 })
 export class InvoiceListComponent implements OnInit {
-  loading = true;
+  loading = false;
   isInvoiceRequestLoading = false;
   invoices?: Invoice[];
   policySearchText = '';
@@ -75,6 +79,8 @@ export class InvoiceListComponent implements OnInit {
   qrCodeImages: Record<string, string> = {};
   qrCodePreviewImages: Record<string, string> = {};
   qrCodeDisplayTexts: Record<string, string> = {};
+  qrInvoicePdfUrls: Record<string, string> = {};
+  isOpeningQrPdf = false;
   constructor(
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
@@ -135,14 +141,17 @@ export class InvoiceListComponent implements OnInit {
     this.loading = true;
     this.invoiceService
       .searchInvoicesByReference(this.policySearchText)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+        })
+      )
       .subscribe(
         (response) => {
-          this.loading = false;
           this.invoices = [...(response || [])];
           this.refreshQrCodeImages(this.invoices);
         },
         (error) => {
-          this.loading = false;
           this.invoices = [];
           this.messageService.error(
             error?.error?.errorMessage || 'Erreur lors de la recherche des polices.',
@@ -283,21 +292,24 @@ export class InvoiceListComponent implements OnInit {
     this.invoices = [];
     console.log(periodeDto);
 
-    this.invoiceService.getAll(periodeDto).subscribe(
-      (reponse) => {
-        this.loading = false;
-        console.log(reponse);
-
-
-        if (reponse) {
-          this.invoices = [...reponse];
+    this.invoiceService
+      .getAll(periodeDto)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+        })
+      )
+      .subscribe(
+        (reponse) => {
+          console.log(reponse);
+          this.invoices = Array.isArray(reponse) ? [...reponse] : [];
           this.refreshQrCodeImages(this.invoices);
+        },
+        (error: any) => {
+          this.invoices = [];
+          console.log(error);
         }
-      },
-      (error: any) => {
-        this.loading = false;
-      }
-    );
+      );
     this.invoiceService.pageIndex = 0;
   }
 
@@ -306,18 +318,23 @@ export class InvoiceListComponent implements OnInit {
     numeave: number,
     Invoicenumber: string
   ) {
+    this.loading = true;
     this.invoiceService
       .getPoliciesByNumPolcy(codeint, numeave, Invoicenumber)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+        })
+      )
       .subscribe(
         (reponse) => {
-          this.loading = false;
           console.log(reponse);
-
-          this.invoices = [...reponse];
+          this.invoices = Array.isArray(reponse) ? [...reponse] : [];
           this.refreshQrCodeImages(this.invoices);
         },
         (error) => {
-          this.loading = false;
+          this.invoices = [];
+          console.log(error);
         }
       );
   }
@@ -334,46 +351,7 @@ export class InvoiceListComponent implements OnInit {
   }
 
   printDGIInvoice(invoice: Invoice) {
-    this.frappeSalesInvoiceRequestService
-      .getByCleAndStatus(invoice.cle, '1')
-      .subscribe(
-        async (response) => {
-
-          console.log('request............', response);
-
-          try {
-            const data = this.buildFrontendInvoiceData(invoice, response);
-            const pdfBlob = await this.generateInvoicePdfBlob(data);
-            const pdfUrl = window.URL.createObjectURL(pdfBlob);
-            const openedTab = window.open(pdfUrl, '_blank');
-
-            if (!openedTab) {
-              this.messageService.warning(
-                "Le navigateur a bloqué l'ouverture du PDF. Veuillez autoriser les popups.",
-                'Info impression'
-              );
-            }
-
-            // Give the new tab enough time to load the blob URL.
-            setTimeout(() => {
-              window.URL.revokeObjectURL(pdfUrl);
-            }, 60000);
-          } catch (pdfError) {
-            console.log(pdfError);
-            this.messageService.error(
-              "Impossible de générer le PDF avec le QR code.",
-              'Info impression'
-            );
-          }
-        },
-        (error) => {
-          console.log(error);
-          this.messageService.error(
-            error?.error?.errorMessage || "Aucune requête trouvée pour cette facture.",
-            'Info état de sortie'
-          );
-        }
-      );
+    this.openQrInvoicePdf(invoice);
   }
 
   private buildFrontendInvoiceData(invoice: Invoice, request: any): any {
@@ -994,9 +972,103 @@ export class InvoiceListComponent implements OnInit {
     downloadDataUrl(image, `QR_${invoice.cle}.png`);
   }
 
+  getQrInvoicePdfUrl(invoice: Invoice): string | null {
+    if (invoice?.cle && this.qrInvoicePdfUrls[invoice.cle]) {
+      return this.qrInvoicePdfUrls[invoice.cle];
+    }
+
+    return extractQrCodeUrl(this.getQrCodeRaw(invoice));
+  }
+
+  canOpenQrInvoicePdf(invoice: Invoice): boolean {
+    return !!this.getQrCodeRaw(invoice) || !!this.getDrawerQrImage(invoice);
+  }
+
+  async openQrInvoicePdf(invoice: Invoice): Promise<void> {
+    if (this.isOpeningQrPdf) {
+      return;
+    }
+
+    // Ouvrir l'onglet synchrone au clic (évite le bloqueur de popups après await).
+    const openedTab = window.open('about:blank', '_blank');
+    if (!openedTab) {
+      this.messageService.warning(
+        "Le navigateur a bloqué l'ouverture de l'onglet. Veuillez autoriser les popups.",
+        'Facture PDF'
+      );
+      return;
+    }
+
+    this.isOpeningQrPdf = true;
+    try {
+      openedTab.document.write(
+        '<p style="font-family:sans-serif;padding:24px;color:#334155;">Chargement de la facture PDF...</p>'
+      );
+
+      let url = this.getQrInvoicePdfUrl(invoice);
+
+      if (!isOpenableHttpUrl(url)) {
+        const raw = this.getQrCodeRaw(invoice);
+        let image = this.getDrawerQrImage(invoice);
+
+        if (!image && raw) {
+          const embedded = toEmbeddedImageDataUrl(raw);
+          if (embedded) {
+            image = embedded;
+          } else {
+            const rendered = await renderQrCodeImage(raw, QR_CODE_PREVIEW_WIDTH);
+            image = rendered?.dataUrl || null;
+            if (rendered?.payloadUrl && isOpenableHttpUrl(rendered.payloadUrl)) {
+              url = rendered.payloadUrl;
+            }
+          }
+        }
+
+        if (!isOpenableHttpUrl(url) && image) {
+          const decoded = await decodeQrPayloadUrlFromDataUrl(image);
+          if (invoice?.cle && decoded) {
+            if (isOpenableHttpUrl(decoded)) {
+              url = decoded;
+              this.qrInvoicePdfUrls = {
+                ...this.qrInvoicePdfUrls,
+                [invoice.cle]: decoded,
+              };
+            } else {
+              url = extractQrCodeUrl(decoded);
+            }
+          }
+        }
+      }
+
+      if (!isOpenableHttpUrl(url)) {
+        openedTab.close();
+        this.messageService.warning(
+          "Impossible d'extraire le lien PDF depuis le QR code SFEC.",
+          'Facture PDF'
+        );
+        return;
+      }
+
+      openedTab.location.href = url!;
+    } catch (error) {
+      openedTab.close();
+      console.log('Erreur ouverture facture PDF:', error);
+      this.messageService.error(
+        "Impossible d'ouvrir la facture PDF.",
+        'Facture PDF'
+      );
+    } finally {
+      this.isOpeningQrPdf = false;
+    }
+  }
+
   private async ensureDrawerQrImage(invoice: Invoice): Promise<void> {
     const raw = this.getQrCodeRaw(invoice);
-    if (!raw || !invoice?.cle || this.qrCodePreviewImages[invoice.cle]) {
+    if (!raw || !invoice?.cle) {
+      return;
+    }
+
+    if (this.qrCodePreviewImages[invoice.cle] && this.qrInvoicePdfUrls[invoice.cle]) {
       return;
     }
 
@@ -1006,6 +1078,18 @@ export class InvoiceListComponent implements OnInit {
         this.qrCodePreviewImages = {
           ...this.qrCodePreviewImages,
           [invoice.cle]: rendered.dataUrl,
+        };
+      }
+      if (rendered?.payloadUrl && isOpenableHttpUrl(rendered.payloadUrl)) {
+        this.qrInvoicePdfUrls = {
+          ...this.qrInvoicePdfUrls,
+          [invoice.cle]: rendered.payloadUrl,
+        };
+      }
+      if (rendered?.displayText) {
+        this.qrCodeDisplayTexts = {
+          ...this.qrCodeDisplayTexts,
+          [invoice.cle]: rendered.displayText,
         };
       }
     } catch (error) {
@@ -1055,6 +1139,7 @@ export class InvoiceListComponent implements OnInit {
   private async refreshQrCodeImages(invoices: Invoice[] = []): Promise<void> {
     const nextImages: Record<string, string> = { ...this.qrCodeImages };
     const nextTexts: Record<string, string> = { ...this.qrCodeDisplayTexts };
+    const nextPdfUrls: Record<string, string> = { ...this.qrInvoicePdfUrls };
 
     for (const invoice of invoices) {
       const qrCodeValue = this.getQrCodeRaw(invoice);
@@ -1068,6 +1153,9 @@ export class InvoiceListComponent implements OnInit {
           nextImages[invoice.cle] = rendered.dataUrl;
           nextTexts[invoice.cle] = rendered.displayText;
         }
+        if (rendered?.payloadUrl && isOpenableHttpUrl(rendered.payloadUrl)) {
+          nextPdfUrls[invoice.cle] = rendered.payloadUrl;
+        }
       } catch (error) {
         console.log('Erreur de génération du QR code:', error);
       }
@@ -1075,6 +1163,7 @@ export class InvoiceListComponent implements OnInit {
 
     this.qrCodeImages = nextImages;
     this.qrCodeDisplayTexts = nextTexts;
+    this.qrInvoicePdfUrls = nextPdfUrls;
   }
 
   private buildSfecResponseFromCreateResponse(response: any): SfecCertificationResponse | undefined {

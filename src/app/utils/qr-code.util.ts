@@ -1,9 +1,11 @@
 import * as QRCode from 'qrcode';
+import jsQR from 'jsqr';
 
 export interface QrCodeRenderResult {
   dataUrl: string;
   displayText: string;
   isEmbeddedImage: boolean;
+  payloadUrl?: string | null;
 }
 
 export const QR_CODE_TABLE_WIDTH = 512;
@@ -49,6 +51,24 @@ export function toEmbeddedImageDataUrl(value: string): string | null {
   return null;
 }
 
+/**
+ * Extrait une URL ouvrable depuis le contenu d'un QR code SFEC.
+ * Gère les URLs http(s) directes, ou une URL enfouie dans un texte plus long.
+ */
+export function extractQrCodeUrl(raw: unknown): string | null {
+  const value = normalizeQrCodeRaw(raw);
+  if (!value || isEmbeddedQrImage(value)) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  const matched = value.match(/https?:\/\/[^\s"'<>]+/i);
+  return matched ? matched[0] : null;
+}
+
 export async function renderQrCodeImage(
   value: string,
   width = QR_CODE_TABLE_WIDTH
@@ -60,10 +80,12 @@ export async function renderQrCodeImage(
 
   const embedded = toEmbeddedImageDataUrl(normalized);
   if (embedded) {
+    const payloadUrl = await decodeQrPayloadUrlFromDataUrl(embedded);
     return {
       dataUrl: embedded,
-      displayText: 'QR code certifié SFEC',
+      displayText: payloadUrl || 'QR code certifié SFEC',
       isEmbeddedImage: true,
+      payloadUrl,
     };
   }
 
@@ -81,7 +103,45 @@ export async function renderQrCodeImage(
     dataUrl,
     displayText: normalized,
     isEmbeddedImage: false,
+    payloadUrl: extractQrCodeUrl(normalized),
   };
+}
+
+export async function decodeQrPayloadUrlFromDataUrl(dataUrl: string): Promise<string | null> {
+  try {
+    const image = await loadImage(dataUrl);
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return null;
+    }
+
+    context.drawImage(image, 0, 0);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const decoded = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'attemptBoth',
+    });
+
+    if (!decoded?.data) {
+      return null;
+    }
+
+    return extractQrCodeUrl(decoded.data) || normalizeQrCodeRaw(decoded.data) || null;
+  } catch (error) {
+    console.log('Erreur de décodage du QR code:', error);
+    return null;
+  }
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Impossible de charger limage QR'));
+    image.src = src;
+  });
 }
 
 export function downloadDataUrl(dataUrl: string, fileName: string): void {
@@ -92,4 +152,8 @@ export function downloadDataUrl(dataUrl: string, fileName: string): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+export function isOpenableHttpUrl(value: string | null | undefined): boolean {
+  return !!value && /^https?:\/\//i.test(value.trim());
 }

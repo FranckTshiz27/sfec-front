@@ -5,19 +5,9 @@
         <i nz-icon nzType="file-text"></i>
       </div>
       <div>
-        <h2>Historique des opérations EDEF/DGI</h2>
-        <p>Consultez l'historique des factures envoyées à la DGI</p>
+        <h2>Historique des factures SFEC</h2>
+        <p>Consultez l'historique des factures certifiées auprès du SFEC</p>
       </div>
-    </div>
-    <div class="tx-page-actions">
-      <button nz-button nzType="default">
-        <i nz-icon nzType="download"></i>
-        Exporter
-      </button>
-      <button nz-button nzType="primary">
-        <i nz-icon nzType="plus"></i>
-        Nouvelle facture
-      </button>
     </div>
   </div>
 
@@ -104,12 +94,12 @@
         <thead>
           <tr>
             <th>Référence métier</th>
-            <th>N° Facture ERP</th>
+            <th>N° Facture SFEC</th>
             <th>Client</th>
             <th>Type</th>
-            <th>Taux</th>
+            <th>Devise</th>
             <th>Montant TTC</th>
-            <th>Statut DGI</th>
+            <th>Statut SFEC</th>
             <th>Date / Heure</th>
             <th>Actions</th>
           </tr>
@@ -125,16 +115,12 @@
               </span>
             </td>
             <td>
-              <div>{{ transaction.exchangeRate | number : '1.2-4' }}</div>
-              <small>
-                {{
-                  transaction.exchangeRateEffectiveDate
-                    ? (transaction.exchangeRateEffectiveDate | date : 'dd/MM/yyyy HH:mm:ss')
-                    : '-'
-                }}
+              <div>{{ transaction.exchangeRate || '-' }}</div>
+              <small *ngIf="transaction.intermediaryCode != null">
+                Interm. {{ transaction.intermediaryCode }}
               </small>
             </td>
-            <td>{{ transaction.prime | number : '1.2-2' }} CDF</td>
+            <td>{{ transaction.prime | number : '1.2-2' }} {{ transaction.currencyCode || 'XAF' }}</td>
             <td>
               <span class="tx-status-chip" [ngClass]="'status-' + getStatusKey(transaction.status)">
                 <i
@@ -165,13 +151,13 @@
                   nz-button
                   nzType="default"
                   class="tx-action-btn"
-                  *ngIf="transaction.status == '1'"
+                  *ngIf="isPrintable(transaction)"
                   (click)="printDGIInvoice(transaction)"
-                  title="Télécharger"
+                  title="Afficher la facture PDF"
                 >
-                  <i nz-icon nzType="download"></i>
+                  <i nz-icon nzType="file-pdf"></i>
                 </button>
-                <button nz-button nzType="default" class="tx-action-btn" *ngIf="transaction.status != '1'" disabled title="Indisponible">
+                <button nz-button nzType="default" class="tx-action-btn" *ngIf="!isPrintable(transaction)" disabled title="Indisponible">
                   <i nz-icon nzType="sync"></i>
                 </button>
               </div>
@@ -260,7 +246,7 @@
         selectedTransaction?.messageContent?.dateTime ||
         selectedTransaction?.messageContent?.qrCode
       "
-      nzText="Message DGI"
+      nzText="Certification SFEC"
     ></nz-divider>
     <nz-descriptions
       *ngIf="
@@ -274,20 +260,26 @@
       nzBordered
       nzLayout="vertical"
     >
-      <nz-descriptions-item nzTitle="Code DEF/DGI">
-        {{ selectedTransaction?.messageContent?.codeDEFDGI || '-' }}
+      <nz-descriptions-item nzTitle="N° certification">
+        {{ selectedTransaction?.messageContent?.codeDEFDGI || selectedTransaction?.certificationNumber || '-' }}
       </nz-descriptions-item>
-      <nz-descriptions-item nzTitle="Compteurs">
-        {{ selectedTransaction?.messageContent?.counters || '-' }}
+      <nz-descriptions-item nzTitle="Identifiant">
+        {{ selectedTransaction?.messageContent?.counters || selectedTransaction?.identifier || '-' }}
       </nz-descriptions-item>
-      <nz-descriptions-item nzTitle="NIM">
-        {{ selectedTransaction?.messageContent?.nim || '-' }}
+      <nz-descriptions-item nzTitle="Signature courte">
+        {{ selectedTransaction?.messageContent?.nim || selectedTransaction?.shortSignature || '-' }}
       </nz-descriptions-item>
-      <nz-descriptions-item nzTitle="Date / Heure">
-        {{ selectedTransaction?.messageContent?.dateTime || '-' }}
+      <nz-descriptions-item nzTitle="Date certification">
+        {{ (selectedTransaction?.messageContent?.dateTime || selectedTransaction?.certificationDate) | date : 'dd/MM/yyyy HH:mm:ss' }}
       </nz-descriptions-item>
       <nz-descriptions-item nzTitle="QR Code" [nzSpan]="3">
-        <span class="tx-qr-value">{{ selectedTransaction?.messageContent?.qrCode || '-' }}</span>
+        <span class="tx-qr-value">{{ selectedTransaction?.messageContent?.qrCode || selectedTransaction?.qrCode || '-' }}</span>
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Actions" [nzSpan]="3" *ngIf="isPrintable(selectedTransaction)">
+        <button nz-button nzType="primary" (click)="printDGIInvoice(selectedTransaction)">
+          <i nz-icon nzType="file-pdf"></i>
+          Afficher la facture PDF
+        </button>
       </nz-descriptions-item>
     </nz-descriptions>
 

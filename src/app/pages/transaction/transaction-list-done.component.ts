@@ -44,6 +44,15 @@ import { Transaction } from 'src/app/dto/Transaction';
 import { UtilService } from 'src/app/utils/utils.service';
 import { FrappeSalesInvoiceRequestService } from 'src/app/services/frappe-sales-invoice-request.service';
 import { FrappeSalesInvoiceRequest } from 'src/app/dto/frappe-sales-invoice-request.model';
+import { SfecInvoiceResponse } from 'src/app/dto/SfecInvoiceResponse';
+import {
+  decodeQrPayloadUrlFromDataUrl,
+  extractQrCodeUrl,
+  isOpenableHttpUrl,
+  normalizeQrCodeRaw,
+  renderQrCodeImage,
+  toEmbeddedImageDataUrl,
+} from 'src/app/utils/qr-code.util';
 
 @Component({
   selector: 'app-transaction-list',
@@ -128,6 +137,7 @@ export class TransactionListDoneComponent implements OnInit {
     public authService: AuthService,
     private policyService: PolicyService,
     private riskService: RiskService,
+    private invoiceService: InvoiceService,
     private frappeSalesInvoiceRequestService: FrappeSalesInvoiceRequestService,
     private message: MessageDialogService,
     private sanitizer: DomSanitizer,
@@ -159,20 +169,21 @@ export class TransactionListDoneComponent implements OnInit {
   }
   getTransactions() {
     this.loading = true;
-    const dateDebut = this.toLocalDateParam(this.periodeDto?.dateDebut);
-    const dateFin = this.toLocalDateParam(this.periodeDto?.dateFin);
-
-    this.frappeSalesInvoiceRequestService.getByCreatedPeriod(dateDebut, dateFin).subscribe(
+    this.invoiceService.getTransactions(this.periodeDto).subscribe(
       (response) => {
-        console.log(response);
-        this.transactions = (response || []).map((request) =>
-          this.mapFrappeRequestToTransaction(request)
+        this.transactions = (response || []).map((invoice) =>
+          this.mapSfecInvoiceToTransaction(invoice)
         );
         this.loading = false;
       },
       (error) => {
         console.log(error);
+        this.transactions = [];
         this.loading = false;
+        this.message.error(
+          error?.error?.errorMessage || "Erreur lors du chargement de l'historique SFEC.",
+          'Historique'
+        );
       }
     );
   }
@@ -310,6 +321,10 @@ export class TransactionListDoneComponent implements OnInit {
         transaction.type,
         transaction.status,
         transaction.client?.name,
+        transaction.client?.nif,
+        transaction.certificationNumber,
+        transaction.invoiceNumber,
+        transaction.intermediaryCode,
         transaction.exchangeRate,
         transaction.exchangeRateEffectiveDate,
       ]
@@ -347,12 +362,16 @@ export class TransactionListDoneComponent implements OnInit {
   }
 
   getStatusKey(status?: string): 'success' | 'error' | 'pending' {
-    switch (status) {
+    switch (`${status || ''}`.toUpperCase()) {
       case '1':
+      case 'CERTIFIED':
         return 'success';
       case '-1':
+      case 'FAILED':
         return 'error';
       case '0':
+      case 'SUBMITTED':
+      case 'DRAFT':
         return 'pending';
       default:
         return 'pending';
@@ -360,16 +379,109 @@ export class TransactionListDoneComponent implements OnInit {
   }
 
   getStatusLabel(status?: string): string {
-    switch (status) {
+    switch (`${status || ''}`.toUpperCase()) {
       case '1':
-        return 'Succès';
+      case 'CERTIFIED':
+        return 'Certifiée';
       case '-1':
-        return 'Erreur';
+      case 'FAILED':
+        return 'Échec';
       case '0':
-        return 'Non validé';
+      case 'SUBMITTED':
+        return 'Soumise';
+      case 'DRAFT':
+        return 'Brouillon';
       default:
-        return 'Non validé';
+        return status || 'Non validé';
     }
+  }
+
+  isPrintable(transaction: any): boolean {
+    return this.getStatusKey(transaction?.status) === 'success' || !!normalizeQrCodeRaw(transaction?.qrCode);
+  }
+
+  private mapSfecInvoiceToTransaction(invoice: SfecInvoiceResponse): any {
+    const items = (invoice.items || []).map((item, index) => ({
+      id: `${index}`,
+      code: `${item.classification_code ?? ''}`,
+      type: `${item.type ?? ''}`,
+      name: `${item.designation ?? ''}`,
+      price: Number(item.unit_price ?? 0),
+      quantity: Number(item.quantity ?? 0),
+      taxGroup: `${item.tax_rate ?? ''}`,
+      taxSpecificValue: '',
+      taxSpecificAmount: Number(item.tax_amount ?? 0),
+      originalPrice: Number(item.unit_price ?? 0),
+      priceModification: `${item.discount_type ?? ''}`,
+      subtotal: Number(item.subtotal ?? 0),
+      totalAmount: Number(item.total_amount ?? 0),
+    }));
+
+    return {
+      id: `${invoice.id ?? ''}`,
+      nif: `${invoice.taxpayer_niu ?? invoice.recipient_niu ?? ''}`,
+      cle: `${invoice.invoice_id ?? ''}`,
+      rn: `${invoice.invoice_number ?? invoice.invoice_id ?? ''}`,
+      mode: `${invoice.payment_method ?? ''}`,
+      isf: `${invoice.sciet ?? ''}`,
+      type: `${invoice.invoice_type ?? ''}`,
+      items,
+      client: {
+        id: '',
+        nif: `${invoice.recipient_niu ?? ''}`,
+        name: `${invoice.recipient_name ?? ''}`,
+        address: `${invoice.recipient_address ?? ''}`,
+        contact: `${invoice.recipient_phone ?? ''}`,
+        email: `${invoice.recipient_email ?? ''}`,
+        type: `${invoice.recipient_type ?? ''}`,
+        rccm: `${invoice.recipient_rccm ?? ''}`,
+      },
+      shop: null,
+      operator: null,
+      payments: invoice.payment_method
+        ? [
+            {
+              mode: invoice.payment_method,
+              reference: invoice.payment_reference,
+              date: invoice.payment_date,
+              amount: invoice.amount_due ?? invoice.total_amount,
+            },
+          ]
+        : [],
+      reference: `${invoice.invoice_id ?? ''}`,
+      referenceType: `${invoice.invoice_type ?? ''}`,
+      referenceDesc: `${invoice.invoice_subject ?? ''}`,
+      currencyCode: `${invoice.currency ?? 'XAF'}`,
+      currencyDate: invoice.payment_date || invoice.created_at,
+      currencyRate: null,
+      exchangeRate: invoice.currency || 'XAF',
+      exchangeRateEffectiveDate: invoice.payment_date || invoice.created_at,
+      prime: Number(invoice.total_amount ?? invoice.amount_due ?? 0),
+      createdAt: invoice.created_at || invoice.certification_date,
+      updatedAt: invoice.certification_date || invoice.created_at,
+      status: `${invoice.status ?? '0'}`,
+      intermediaryCode: invoice.intermediary_code,
+      certificationNumber: invoice.certification_number,
+      invoiceNumber: invoice.invoice_number,
+      signature: invoice.signature,
+      shortSignature: invoice.short_signature,
+      qrCode: invoice.qr_code,
+      certificationDate: invoice.certification_date,
+      identifier: invoice.identifier,
+      subtotal: invoice.subtotal,
+      totalTaxAmount: invoice.total_tax_amount,
+      totalTaxTAmount: invoice.total_tax_t_amount,
+      amountDue: invoice.amount_due,
+      notes: invoice.notes,
+      sfecResponse: invoice,
+      messageContent: {
+        codeDEFDGI: invoice.certification_number,
+        counters: invoice.identifier,
+        nim: invoice.short_signature,
+        dateTime: invoice.certification_date,
+        qrCode: invoice.qr_code,
+      },
+    };
   }
 
   private toLocalDateParam(value: Date | string): string {
@@ -1058,46 +1170,52 @@ export class TransactionListDoneComponent implements OnInit {
     return numPolicy.substring(index + 1);
   }
   printDGIInvoice(transaction: any) {
-    this.frappeSalesInvoiceRequestService
-      .getByCleAndStatus(transaction.cle, '1')
-      .subscribe(
-        async (response) => {
+    this.openSfecInvoicePdf(transaction);
+  }
 
-          console.log('request............', response);
-
-          try {
-            const data = this.buildFrontendInvoiceData(transaction as Invoice, response);
-            const pdfBlob = await this.generateInvoicePdfBlob(data);
-            const pdfUrl = window.URL.createObjectURL(pdfBlob);
-            const openedTab = window.open(pdfUrl, '_blank');
-
-            if (!openedTab) {
-              this.message.warning(
-                "Le navigateur a bloqué l'ouverture du PDF. Veuillez autoriser les popups.",
-                'Info impression'
-              );
-            }
-
-            // Give the new tab enough time to load the blob URL.
-            setTimeout(() => {
-              window.URL.revokeObjectURL(pdfUrl);
-            }, 60000);
-          } catch (pdfError) {
-            console.log(pdfError);
-            this.message.error(
-              "Impossible de générer le PDF avec le QR code.",
-              'Info impression'
-            );
-          }
-        },
-        (error) => {
-          console.log(error);
-          this.message.error(
-            error?.error?.errorMessage || "Aucune requête trouvée pour cette facture.",
-            'Info état de sortie'
-          );
-        }
+  async openSfecInvoicePdf(transaction: any): Promise<void> {
+    const openedTab = window.open('about:blank', '_blank');
+    if (!openedTab) {
+      this.message.warning(
+        "Le navigateur a bloqué l'ouverture de l'onglet. Veuillez autoriser les popups.",
+        'Facture PDF'
       );
+      return;
+    }
+
+    try {
+      openedTab.document.write(
+        '<p style="font-family:sans-serif;padding:24px;color:#334155;">Chargement de la facture PDF...</p>'
+      );
+
+      let url = extractQrCodeUrl(transaction?.qrCode);
+
+      if (!isOpenableHttpUrl(url) && transaction?.qrCode) {
+        const embedded = toEmbeddedImageDataUrl(normalizeQrCodeRaw(transaction.qrCode));
+        if (embedded) {
+          const decoded = await decodeQrPayloadUrlFromDataUrl(embedded);
+          url = isOpenableHttpUrl(decoded) ? decoded : extractQrCodeUrl(decoded);
+        } else {
+          const rendered = await renderQrCodeImage(transaction.qrCode, 256);
+          url = rendered?.payloadUrl || null;
+        }
+      }
+
+      if (!isOpenableHttpUrl(url)) {
+        openedTab.close();
+        this.message.warning(
+          "Impossible d'extraire le lien PDF depuis le QR code SFEC.",
+          'Facture PDF'
+        );
+        return;
+      }
+
+      openedTab.location.href = url!;
+    } catch (error) {
+      openedTab.close();
+      console.log(error);
+      this.message.error("Impossible d'ouvrir la facture PDF.", 'Facture PDF');
+    }
   }
 
 

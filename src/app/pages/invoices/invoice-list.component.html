@@ -227,9 +227,9 @@
           <button
             type="button"
             class="open-link_view_action_jaun action-btn-reset"
-            title="Imprimer la facture"
+            title="Afficher la facture PDF"
             *ngIf="isNormalized(invoice)"
-            [disabled]="isInvoiceRequestLoading"
+            [disabled]="isInvoiceRequestLoading || isOpeningQrPdf"
             (click)="printDGIInvoice(invoice)"
           >
             <fa-icon [icon]="faPrint" class="icon"></fa-icon>
@@ -314,15 +314,28 @@
             <span class="drawer-qr-value" *ngIf="getQrCodeValue(selectedInvoice) !== 'QR code certifié SFEC'">
               {{ getQrCodeValue(selectedInvoice) }}
             </span>
-            <button
-              nz-button
-              nzType="default"
-              class="drawer-qr-download-btn"
-              (click)="downloadDrawerQr(selectedInvoice)"
-            >
-              <i nz-icon nzType="download"></i>
-              Télécharger le QR code
-            </button>
+            <div class="drawer-qr-actions">
+              <button
+                nz-button
+                nzType="primary"
+                class="drawer-qr-pdf-btn"
+                [nzLoading]="isOpeningQrPdf"
+                [disabled]="isOpeningQrPdf"
+                (click)="openQrInvoicePdf(selectedInvoice)"
+              >
+                <i nz-icon nzType="file-pdf" *ngIf="!isOpeningQrPdf"></i>
+                Afficher la facture PDF
+              </button>
+              <button
+                nz-button
+                nzType="default"
+                class="drawer-qr-download-btn"
+                (click)="downloadDrawerQr(selectedInvoice)"
+              >
+                <i nz-icon nzType="download"></i>
+                Télécharger le QR code
+              </button>
+            </div>
           </div>
         </ng-container>
 
@@ -375,6 +388,17 @@
     </nz-descriptions>
 
     <div class="drawer-footer-actions">
+      <button
+        nz-button
+        nzType="primary"
+        *ngIf="canOpenQrInvoicePdf(selectedInvoice)"
+        [nzLoading]="isOpeningQrPdf"
+        [disabled]="isOpeningQrPdf"
+        (click)="openQrInvoicePdf(selectedInvoice)"
+      >
+        <i nz-icon nzType="file-pdf" *ngIf="!isOpeningQrPdf"></i>
+        Afficher la facture PDF
+      </button>
       <button nz-button nzType="default" class="drawer-close-btn" (click)="closeDrawer()">Fermer</button>
     </div>
   </div>

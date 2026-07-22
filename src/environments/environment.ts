@@ -94,7 +94,7 @@ export const environment = {
     V1: {
       ADD: 'v1/create',
       //createmany
-      GET_DGI_INVOICE: '/get-dgi-invoice',
+      GET_DGI_INVOICE: '/invoices',
       CREATE_DGI_INVOICE: '/create-dgi-invoice',
       PRINT_DGI_INVOICE: '/print-dgi-invoice',
       ADD_MANY_PERMISSIONS: 'v1/createmany',

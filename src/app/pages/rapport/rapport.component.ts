@@ -222,11 +222,27 @@ export class RapportComponent implements OnInit {
     this.loading = true;
     this.invoiceService.getTransactions(this.periodeDto).subscribe(
       (response) => {
-        this.transactions = [...response];
+        this.transactions = (response || []).map((invoice: any) => ({
+          id: `${invoice.id ?? ''}`,
+          nif: `${invoice.taxpayer_niu ?? invoice.recipient_niu ?? ''}`,
+          cle: `${invoice.invoice_id ?? ''}`,
+          rn: `${invoice.invoice_number ?? invoice.invoice_id ?? ''}`,
+          mode: `${invoice.payment_method ?? ''}`,
+          type: `${invoice.invoice_type ?? ''}`,
+          client: {
+            name: `${invoice.recipient_name ?? ''}`,
+            nif: `${invoice.recipient_niu ?? ''}`,
+          },
+          currencyCode: `${invoice.currency ?? 'XAF'}`,
+          prime: Number(invoice.total_amount ?? invoice.amount_due ?? 0),
+          createdAt: invoice.created_at || invoice.certification_date,
+          status: `${invoice.status ?? '0'}`,
+        })) as any;
         this.loading = false;
       },
       (error) => {
         console.log(error);
+        this.transactions = [];
         this.loading = false;
       }
     );

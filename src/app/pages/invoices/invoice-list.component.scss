@@ -1352,8 +1352,28 @@ td {
   border-width: 3px;
 }
 
-.drawer-qr-download-btn {
+.drawer-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.drawer-qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 4px;
+}
+
+.drawer-qr-pdf-btn,
+.drawer-qr-download-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
 }
 
 .drawer-qr-block {
